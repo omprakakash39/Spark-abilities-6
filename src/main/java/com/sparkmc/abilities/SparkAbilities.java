@@ -15,7 +15,9 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -33,6 +35,7 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
 
     private static SparkAbilities instance;
     private final HashMap<UUID, Integer> hitCounters = new HashMap<>();
+    private final String GUI_TITLE = ChatColor.DARK_PURPLE + "⚡ SparkMC Ability Menu";
 
     @Override
     public void onEnable() {
@@ -41,9 +44,12 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
         if (getCommand("sparkgive") != null) {
             getCommand("sparkgive").setExecutor(this);
         }
+        if (getCommand("sparkgui") != null) {
+            getCommand("sparkgui").setExecutor(this);
+        }
         getServer().getPluginManager().registerEvents(this, this);
 
-        getLogger().info("SparkMC Abilities Loaded successfully with all Crate items!");
+        getLogger().info("SparkMC Abilities Loaded successfully with GUI support!");
     }
 
     @Override
@@ -55,27 +61,71 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
         return instance;
     }
 
-    // --- COMMAND TO GIVE ITEMS ---
+    // --- COMMAND HANDLER ---
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
-        if (!sender.hasPermission("spark.admin")) {
-            sender.sendMessage(ChatColor.RED + "You don't have permission!");
+        if (!(sender instanceof Player)) {
+            sender.sendMessage("Only players can use this command!");
             return true;
         }
 
-        if (args.length < 2) {
-            sender.sendMessage(ChatColor.YELLOW + "Usage: /sparkgive <player> <ability>");
-            sender.sendMessage(ChatColor.GRAY + "Abilities: berserk, itemcounter, stickyfingers, clogger, stungun, focusmode, deathtouch, elixir, hulk, web");
+        Player player = (Player) sender;
+
+        if (!player.hasPermission("spark.admin")) {
+            player.sendMessage(ChatColor.RED + "You don't have permission to use this command!");
             return true;
         }
 
-        Player target = getServer().getPlayer(args[0]);
-        if (target == null) {
-            sender.sendMessage(ChatColor.RED + "Player not found!");
+        if (command.getName().equalsIgnoreCase("sparkgui")) {
+            openAbilityGui(player);
             return true;
         }
 
-        String type = args[1].toLowerCase();
+        if (command.getName().equalsIgnoreCase("sparkgive")) {
+            if (args.length < 2) {
+                player.sendMessage(ChatColor.YELLOW + "Usage: /sparkgive <player> <ability>");
+                return true;
+            }
+
+            Player target = Bukkit.getPlayer(args[0]);
+            if (target == null) {
+                player.sendMessage(ChatColor.RED + "Player not found!");
+                return true;
+            }
+
+            ItemStack abilityItem = getAbilityItem(args[1].toLowerCase());
+            if (abilityItem == null) {
+                player.sendMessage(ChatColor.RED + "Unknown ability!");
+                return true;
+            }
+
+            target.getInventory().addItem(abilityItem);
+            player.sendMessage(ChatColor.GREEN + "Successfully gave ability to " + target.getName());
+        }
+        return true;
+    }
+
+    // --- OPEN GUI METHOD ---
+    private void openAbilityGui(Player player) {
+        Inventory gui = Bukkit.createInventory(null, 27, GUI_TITLE);
+
+        gui.addItem(getAbilityItem("berserk"));
+        gui.addItem(getAbilityItem("itemcounter"));
+        gui.addItem(getAbilityItem("stickyfingers"));
+        gui.addItem(getAbilityItem("clogger"));
+        gui.addItem(getAbilityItem("stungun"));
+        gui.addItem(getAbilityItem("focusmode"));
+        gui.addItem(getAbilityItem("deathtouch"));
+        gui.addItem(getAbilityItem("elixir"));
+        gui.addItem(getAbilityItem("hulk"));
+        gui.addItem(getAbilityItem("web"));
+
+        player.openInventory(gui);
+        player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1.0f, 1.0f);
+    }
+
+    // --- CREATE ABILITY ITEM HELPER ---
+    private ItemStack getAbilityItem(String type) {
         ItemStack item = null;
         NamespacedKey key;
         ItemMeta meta;
@@ -172,18 +222,31 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
                 break;
 
             default:
-                sender.sendMessage(ChatColor.RED + "Unknown ability!");
-                return true;
+                return null;
         }
 
         if (meta != null && item != null) {
             meta.addEnchant(Enchantment.UNBREAKING, 1, true);
             meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
             item.setItemMeta(meta);
-            target.getInventory().addItem(item);
-            sender.sendMessage(ChatColor.GREEN + "Given " + type + " to " + target.getName());
         }
-        return true;
+        return item;
+    }
+
+    // --- GUI CLICK LISTENER ---
+    @EventHandler
+    public void onInventoryClick(InventoryClickEvent event) {
+        if (event.getView().getTitle().equals(GUI_TITLE)) {
+            event.setCancelled(true); // Prevent taking items out of GUI directly
+            if (event.getCurrentItem() != null && event.getCurrentItem().getType() != Material.AIR) {
+                Player player = (Player) event.getWhoClicked();
+                if (player.hasPermission("spark.admin")) {
+                    player.getInventory().addItem(event.getCurrentItem().clone());
+                    player.sendMessage(ChatColor.GREEN + "Added ability item to your inventory!");
+                    player.playSound(player.getLocation(), Sound.ENTITY_ITEM_PICKUP, 0.5f, 1.0f);
+                }
+            }
+        }
     }
 
     // --- INTERACT ABILITIES (RIGHT CLICK) ---
@@ -197,7 +260,6 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
 
         if (event.getAction() == Action.RIGHT_CLICK_AIR || event.getAction() == Action.RIGHT_CLICK_BLOCK) {
             
-            // Berserk
             if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "berserk_item"), PersistentDataType.BYTE)) {
                 event.setCancelled(true);
                 item.setAmount(item.getAmount() - 1);
@@ -206,7 +268,6 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
                 player.sendMessage(ChatColor.RED + "⚡ Berserk activated!");
                 player.playSound(player.getLocation(), Sound.ENTITY_ENDER_DRAGON_GROWL, 0.5f, 1.0f);
             }
-            // Stun Gun
             else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "stun_gun"), PersistentDataType.BYTE)) {
                 event.setCancelled(true);
                 item.setAmount(item.getAmount() - 1);
@@ -215,7 +276,6 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
                 player.sendMessage(ChatColor.AQUA + "❄️ Stun Gun fired!");
                 player.playSound(player.getLocation(), Sound.ENTITY_SNOWBALL_THROW, 1.0f, 1.0f);
             }
-            // Focus Mode
             else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "focus_mode"), PersistentDataType.BYTE)) {
                 event.setCancelled(true);
                 item.setAmount(item.getAmount() - 1);
@@ -223,28 +283,24 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
                 player.sendMessage(ChatColor.LIGHT_PURPLE + "🎯 Focus Mode enabled for 60 seconds!");
                 player.playSound(player.getLocation(), Sound.ITEM_SPYGLASS_USE, 1.0f, 1.0f);
             }
-            // Death's Touch Potion
             else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "death_touch"), PersistentDataType.BYTE)) {
                 event.setCancelled(true);
                 item.setAmount(item.getAmount() - 1);
                 player.damage(6.0);
                 player.sendMessage(ChatColor.DARK_RED + "☠️ Death's Touch consumed!");
             }
-            // Elixir of Life Potion
             else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "elixir_life"), PersistentDataType.BYTE)) {
                 event.setCancelled(true);
                 item.setAmount(item.getAmount() - 1);
                 player.addPotionEffect(new PotionEffect(PotionEffectType.INSTANT_HEALTH, 1, 8));
                 player.sendMessage(ChatColor.GREEN + "❤️ Elixir of Life used!");
             }
-            // Hulk Potion
             else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "hulk_potion"), PersistentDataType.BYTE)) {
                 event.setCancelled(true);
                 item.setAmount(item.getAmount() - 1);
                 player.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 300, 2));
                 player.sendMessage(ChatColor.DARK_GREEN + "💪 Hulk Potion activated!");
             }
-            // Throwable Web
             else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "throwable_web"), PersistentDataType.BYTE)) {
                 event.setCancelled(true);
                 item.setAmount(item.getAmount() - 1);
@@ -265,7 +321,6 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
             if (!item.hasItemMeta()) return;
             ItemMeta meta = item.getItemMeta();
 
-            // Item Counter (Hits 3 times)
             if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "item_counter"), PersistentDataType.BYTE)) {
                 int hits = hitCounters.getOrDefault(attacker.getUniqueId(), 0) + 1;
                 if (hits >= 3) {
@@ -282,14 +337,10 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
                     attacker.sendMessage(ChatColor.YELLOW + "Hit counter: " + hits + "/3");
                 }
             }
-
-            // Sticky Fingers (Using SLOWNESS instead of SLOW)
             else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "sticky_fingers"), PersistentDataType.BYTE)) {
                 target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 300, 1));
                 target.sendMessage(ChatColor.RED + "🛡️ Sticky Fingers applied by " + attacker.getName() + "!");
             }
-
-            // Clogger (Fill inventory with shovels)
             else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "clogger"), PersistentDataType.BYTE)) {
                 int hits = hitCounters.getOrDefault(attacker.getUniqueId(), 0) + 1;
                 if (hits >= 3) {
@@ -306,4 +357,4 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
             }
         }
     }
-}
+                    }
