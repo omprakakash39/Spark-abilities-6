@@ -415,18 +415,6 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
         }
     }
 
-@EventHandler
-    public void onPickup(PlayerPickupItemEvent event) {
-        Player player = event.getPlayer();
-        if (stickyFingersJammed.containsKey(player.getUniqueId())) {
-            if (System.currentTimeMillis() < stickyFingersJammed.get(player.getUniqueId())) {
-                event.setCancelled(true);
-            } else {
-                stickyFingersJammed.remove(player.getUniqueId());
-            }
-        }
-    }
-
     @EventHandler
     public void onDrop(PlayerDropItemEvent event) {
         Player player = event.getPlayer();
