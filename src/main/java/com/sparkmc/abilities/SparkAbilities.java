@@ -219,7 +219,7 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
             else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "focus_mode"), PersistentDataType.BYTE)) {
                 event.setCancelled(true);
                 item.setAmount(item.getAmount() - 1);
-                player.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 1200, 0)); // +10% approx damage
+                player.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 1200, 0));
                 player.sendMessage(ChatColor.LIGHT_PURPLE + "🎯 Focus Mode enabled for 60 seconds!");
                 player.playSound(player.getLocation(), Sound.ITEM_SPYGLASS_USE, 1.0f, 1.0f);
             }
@@ -227,7 +227,7 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
             else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "death_touch"), PersistentDataType.BYTE)) {
                 event.setCancelled(true);
                 item.setAmount(item.getAmount() - 1);
-                player.damage(6.0); // Instant Damage III equivalent
+                player.damage(6.0);
                 player.sendMessage(ChatColor.DARK_RED + "☠️ Death's Touch consumed!");
             }
             // Elixir of Life Potion
@@ -283,9 +283,9 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
                 }
             }
 
-            // Sticky Fingers
+            // Sticky Fingers (Using SLOWNESS instead of SLOW)
             else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "sticky_fingers"), PersistentDataType.BYTE)) {
-                target.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 300, 1));
+                target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 300, 1));
                 target.sendMessage(ChatColor.RED + "🛡️ Sticky Fingers applied by " + attacker.getName() + "!");
             }
 
@@ -306,4 +306,4 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
             }
         }
     }
-                               }
+}
