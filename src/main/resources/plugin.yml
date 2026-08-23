@@ -5,6 +5,8 @@ api-version: '1.21'
 author: Akki
 commands:
   sparkgive:
-    description: Give custom SparkMC abilities
+    description: Give custom abilities
     permission: spark.admin
-    usage: /sparkgive <player> <ability>
+  sparkgui:
+    description: Open the ability admin menu
+    permission: spark.admin
