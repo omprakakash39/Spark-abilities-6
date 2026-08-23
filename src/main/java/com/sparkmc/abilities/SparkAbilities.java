@@ -74,7 +74,6 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
         return instance;
     }
 
-    // --- COMMAND HANDLER ---
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
         if (!(sender instanceof Player)) {
@@ -118,7 +117,6 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
         return true;
     }
 
-    // --- OPEN GUI METHOD (GUI ke andar saare items sirf 1 quantity ke rahenge) ---
     private void openAbilityGui(Player player) {
         Inventory gui = Bukkit.createInventory(null, 36, GUI_TITLE);
 
@@ -139,7 +137,6 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
         player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1.0f, 1.0f);
     }
 
-    // --- HELPER FOR GUI ITEMS (Amount = 1) ---
     private ItemStack getGuiAbilityItem(String type) {
         ItemStack item = getAbilityItem(type);
         if (item != null) {
@@ -148,7 +145,6 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
         return item;
     }
 
-    // --- CREATE ABILITY ITEM HELPER (Inventory mein stackable hone ke liye amount 64) ---
     private ItemStack getAbilityItem(String type) {
         ItemStack item = null;
         NamespacedKey key;
@@ -281,7 +277,6 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
         return item;
     }
 
-    // --- GUI CLICK LISTENER ---
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
         if (event.getView().getTitle().equals(GUI_TITLE)) {
@@ -297,7 +292,6 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
         }
     }
 
-    // --- INTERACT ABILITIES (RIGHT CLICK) ---
     @EventHandler
     public void onInteract(PlayerInteractEvent event) {
         Player player = event.getPlayer();
@@ -322,7 +316,6 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
 
         if (event.getAction() == Action.RIGHT_CLICK_AIR || event.getAction() == Action.RIGHT_CLICK_BLOCK) {
             
-            // Berserk
             if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "berserk_item"), PersistentDataType.BYTE)) {
                 event.setCancelled(true);
                 item.setAmount(item.getAmount() - 1);
@@ -331,7 +324,6 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
                 player.sendMessage(ChatColor.RED + "⚡ Berserk activated!");
                 player.playSound(player.getLocation(), Sound.ENTITY_ENDER_DRAGON_GROWL, 0.5f, 1.0f);
             }
-            // Stun Gun
             else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "stun_gun"), PersistentDataType.BYTE)) {
                 event.setCancelled(true);
                 item.setAmount(item.getAmount() - 1);
@@ -340,7 +332,6 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
                 player.sendMessage(ChatColor.AQUA + "🔥 Fireball shot from Stun Gun!");
                 player.playSound(player.getLocation(), Sound.ENTITY_GHAST_SHOOT, 1.0f, 1.0f);
             }
-            // Focus Mode
             else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "focus_mode"), PersistentDataType.BYTE)) {
                 event.setCancelled(true);
                 item.setAmount(item.getAmount() - 1);
@@ -348,7 +339,6 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
                 player.sendMessage(ChatColor.LIGHT_PURPLE + "🎯 Focus Mode enabled for 60 seconds!");
                 player.playSound(player.getLocation(), Sound.ITEM_SPYGLASS_USE, 1.0f, 1.0f);
             }
-            // Throwable Web
             else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "throwable_web"), PersistentDataType.BYTE)) {
                 event.setCancelled(true);
                 item.setAmount(item.getAmount() - 1);
@@ -357,7 +347,6 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
                 player.sendMessage(ChatColor.AQUA + "🕸️ Web trap thrown!");
                 player.playSound(player.getLocation(), Sound.ENTITY_SNOWBALL_THROW, 1.0f, 1.0f);
             }
-            // XP Jammer Activation
             else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "xp_jammer"), PersistentDataType.BYTE)) {
                 event.setCancelled(true);
                 item.setAmount(item.getAmount() - 1);
@@ -377,7 +366,6 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
         }
     }
 
-    // --- PROJECTILE HIT EVENT (For Throwable Web 3x3 Trap) ---
     @EventHandler
     public void onProjectileHit(ProjectileHitEvent event) {
         if (event.getEntity() instanceof Snowball) {
@@ -415,7 +403,6 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
         }
     }
 
-// --- STICKY FINGERS: Block Item Pickup ---
     @EventHandler
     public void onPickup(PlayerPickupItemEvent event) {
         Player player = event.getPlayer();
@@ -428,7 +415,18 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
         }
     }
 
-    // --- STICKY FINGERS: Block Item Drop ---
+@EventHandler
+    public void onPickup(PlayerPickupItemEvent event) {
+        Player player = event.getPlayer();
+        if (stickyFingersJammed.containsKey(player.getUniqueId())) {
+            if (System.currentTimeMillis() < stickyFingersJammed.get(player.getUniqueId())) {
+                event.setCancelled(true);
+            } else {
+                stickyFingersJammed.remove(player.getUniqueId());
+            }
+        }
+    }
+
     @EventHandler
     public void onDrop(PlayerDropItemEvent event) {
         Player player = event.getPlayer();
@@ -442,7 +440,6 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
         }
     }
 
-    // --- HIT ABILITIES ---
     @EventHandler
     public void onDamage(EntityDamageByEntityEvent event) {
         if (event.getDamager() instanceof Player && event.getEntity() instanceof Player) {
@@ -453,7 +450,6 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
             if (!item.hasItemMeta()) return;
             ItemMeta meta = item.getItemMeta();
 
-            // Item Counter
             if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "item_counter"), PersistentDataType.BYTE)) {
                 int hits = hitCounters.getOrDefault(attacker.getUniqueId(), 0) + 1;
                 if (hits >= 3) {
@@ -470,7 +466,6 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
                     attacker.sendMessage(ChatColor.YELLOW + "Hit counter: " + hits + "/3");
                 }
             }
-            // Sticky Fingers (3 hits par 15 seconds ke liye pickup & drop block)
             else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "sticky_fingers"), PersistentDataType.BYTE)) {
                 int hits = stickyFingersHits.getOrDefault(attacker.getUniqueId(), 0) + 1;
                 if (hits >= 3) {
@@ -479,13 +474,12 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
                     
                     attacker.sendMessage(ChatColor.AQUA + "🍯 Sticky Fingers activated on " + target.getName() + " for 15 seconds!");
                     target.sendMessage(ChatColor.RED + "⚠️ You are trapped by Sticky Fingers! Cannot pick up or drop items for 15 seconds.");
-                    target.playSound(target.getLocation(), Sound.ENTITY_HONEY_BLOCK_SLIDE, 1.0f, 1.0f);
+                    target.playSound(target.getLocation(), Sound.ENTITY_PLAYER_SPLASH, 1.0f, 1.0f);
                 } else {
                     stickyFingersHits.put(attacker.getUniqueId(), hits);
                     attacker.sendMessage(ChatColor.YELLOW + "Sticky Fingers hits: " + hits + "/3");
                 }
             }
-            // Clogger
             else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "clogger"), PersistentDataType.BYTE)) {
                 int hits = hitCounters.getOrDefault(attacker.getUniqueId(), 0) + 1;
                 if (hits >= 3) {
@@ -500,7 +494,6 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
                     hitCounters.put(attacker.getUniqueId(), hits);
                 }
             }
-            // Neutralizer
             else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "neutralizer"), PersistentDataType.BYTE)) {
                 int hits = neutralizerHits.getOrDefault(attacker.getUniqueId(), 0) + 1;
                 if (hits >= 3) {
