@@ -1,0 +1,10 @@
+name: SparkAbilities
+version: 1.0
+main: com.sparkmc.abilities.SparkAbilities
+api-version: '1.21'
+author: Akki
+commands:
+  sparkgive:
+    description: Give custom SparkMC abilities to players
+    permission: spark.admin
+    usage: /sparkgive <player> <ability>
