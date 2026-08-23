@@ -41,6 +41,9 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
 
     private static SparkAbilities instance;
     private final HashMap<UUID, Integer> hitCounters = new HashMap<>();
+    private final HashMap<UUID, Integer> neutralizerHits = new HashMap<>();
+    private final HashMap<UUID, Long> xpJammedPlayers = new HashMap<>();
+    
     private final String GUI_TITLE = ChatColor.DARK_PURPLE + "⚡ SparkMC Ability Menu";
 
     @Override
@@ -55,7 +58,7 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
         }
         getServer().getPluginManager().registerEvents(this, this);
 
-        getLogger().info("SparkMC Abilities Loaded successfully!");
+        getLogger().info("SparkMC Abilities Loaded successfully with stackable items!");
     }
 
     @Override
@@ -113,7 +116,7 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
 
     // --- OPEN GUI METHOD ---
     private void openAbilityGui(Player player) {
-        Inventory gui = Bukkit.createInventory(null, 27, GUI_TITLE);
+        Inventory gui = Bukkit.createInventory(null, 36, GUI_TITLE);
 
         gui.addItem(getAbilityItem("berserk"));
         gui.addItem(getAbilityItem("itemcounter"));
@@ -125,6 +128,8 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
         gui.addItem(getAbilityItem("elixir"));
         gui.addItem(getAbilityItem("hulk"));
         gui.addItem(getAbilityItem("web"));
+        gui.addItem(getAbilityItem("xpjammer"));
+        gui.addItem(getAbilityItem("neutralizer"));
 
         player.openInventory(gui);
         player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1.0f, 1.0f);
@@ -138,7 +143,7 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
 
         switch (type) {
             case "berserk":
-                item = new ItemStack(Material.MAGMA_CREAM);
+                item = new ItemStack(Material.MAGMA_CREAM, 64);
                 meta = item.getItemMeta();
                 meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&c&lBerserk"));
                 meta.setLore(List.of(ChatColor.GRAY + "Right click for Strength & Speed III"));
@@ -147,7 +152,7 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
                 break;
 
             case "itemcounter":
-                item = new ItemStack(Material.PAINTING);
+                item = new ItemStack(Material.PAINTING, 64);
                 meta = item.getItemMeta();
                 meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&d&lItem Counter"));
                 meta.setLore(List.of(ChatColor.GRAY + "Hit player 3 times to check inventory stats"));
@@ -156,7 +161,7 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
                 break;
 
             case "stickyfingers":
-                item = new ItemStack(Material.HONEYCOMB);
+                item = new ItemStack(Material.HONEYCOMB, 64);
                 meta = item.getItemMeta();
                 meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&b&lSticky Fingers"));
                 meta.setLore(List.of(ChatColor.GRAY + "Hit player to slow them down"));
@@ -165,7 +170,7 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
                 break;
 
             case "clogger":
-                item = new ItemStack(Material.WOODEN_SHOVEL);
+                item = new ItemStack(Material.WOODEN_SHOVEL, 64);
                 meta = item.getItemMeta();
                 meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&e&lClogger"));
                 meta.setLore(List.of(ChatColor.GRAY + "Hit player 3 times to clog inventory"));
@@ -174,7 +179,7 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
                 break;
 
             case "stungun":
-                item = new ItemStack(Material.DIAMOND_HOE);
+                item = new ItemStack(Material.DIAMOND_HOE, 64);
                 meta = item.getItemMeta();
                 meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&b&lStun Gun"));
                 meta.setLore(List.of(ChatColor.GRAY + "Right click to shoot a fireball"));
@@ -183,7 +188,7 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
                 break;
 
             case "focusmode":
-                item = new ItemStack(Material.SPYGLASS);
+                item = new ItemStack(Material.SPYGLASS, 64);
                 meta = item.getItemMeta();
                 meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&d&lFocus Mode"));
                 meta.setLore(List.of(ChatColor.GRAY + "Right click for 10% more damage boost"));
@@ -192,7 +197,7 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
                 break;
 
             case "deathtouch":
-                item = new ItemStack(Material.SPLASH_POTION);
+                item = new ItemStack(Material.SPLASH_POTION, 1); // Not stackable
                 PotionMeta pMeta1 = (PotionMeta) item.getItemMeta();
                 pMeta1.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&4&lDeath's Touch Potion"));
                 pMeta1.setLore(List.of(ChatColor.GRAY + "Instant Damage III Splash Potion"));
@@ -203,7 +208,7 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
                 return item;
 
             case "elixir":
-                item = new ItemStack(Material.SPLASH_POTION);
+                item = new ItemStack(Material.SPLASH_POTION, 1); // Not stackable
                 PotionMeta pMeta2 = (PotionMeta) item.getItemMeta();
                 pMeta2.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&a&lElixir of Life Potion"));
                 pMeta2.setLore(List.of(ChatColor.GRAY + "Instant Health IX Potion"));
@@ -214,7 +219,7 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
                 return item;
 
             case "hulk":
-                item = new ItemStack(Material.SPLASH_POTION);
+                item = new ItemStack(Material.SPLASH_POTION, 1); // Not stackable
                 PotionMeta pMeta3 = (PotionMeta) item.getItemMeta();
                 pMeta3.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&2&lHulk Potion"));
                 pMeta3.setLore(List.of(ChatColor.GRAY + "Strength III for 15 seconds"));
@@ -225,11 +230,29 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
                 return item;
 
             case "web":
-                item = new ItemStack(Material.COBWEB);
+                item = new ItemStack(Material.COBWEB, 64);
                 meta = item.getItemMeta();
                 meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&b&lThrowable Web"));
                 meta.setLore(List.of(ChatColor.GRAY + "Right click to throw 3x3 web trap (15s duration)"));
                 key = new NamespacedKey(this, "throwable_web");
+                meta.getPersistentDataContainer().set(key, PersistentDataType.BYTE, (byte) 1);
+                break;
+                
+            case "xpjammer":
+                item = new ItemStack(Material.REPEATING_COMMAND_BLOCK, 64);
+                meta = item.getItemMeta();
+                meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&5&lXP Jammer"));
+                meta.setLore(List.of(ChatColor.GRAY + "Right click to stop all enemies within", ChatColor.GOLD + "12 blocks" + ChatColor.GRAY + " from throwing XP for " + ChatColor.GOLD + "15 seconds!"));
+                key = new NamespacedKey(this, "xp_jammer");
+                meta.getPersistentDataContainer().set(key, PersistentDataType.BYTE, (byte) 1);
+                break;
+                
+            case "neutralizer":
+                item = new ItemStack(Material.BLAZE_ROD, 64);
+                meta = item.getItemMeta();
+                meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&6&lNeutralizer"));
+                meta.setLore(List.of(ChatColor.GRAY + "Hit a player " + ChatColor.RED + "3 times" + ChatColor.GRAY + " to swap their", ChatColor.GOLD + "Protection 4" + ChatColor.GRAY + " armor pieces to " + ChatColor.GOLD + "Protection 3" + ChatColor.GRAY + " for " + ChatColor.GOLD + "8 seconds."));
+                key = new NamespacedKey(this, "neutralizer");
                 meta.getPersistentDataContainer().set(key, PersistentDataType.BYTE, (byte) 1);
                 break;
 
@@ -267,6 +290,20 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
         Player player = event.getPlayer();
         ItemStack item = event.getItem();
 
+        if (event.getAction() == Action.RIGHT_CLICK_AIR || event.getAction() == Action.RIGHT_CLICK_BLOCK) {
+            if (item != null && item.getType() == Material.EXPERIENCE_BOTTLE) {
+                if (xpJammedPlayers.containsKey(player.getUniqueId())) {
+                    if (System.currentTimeMillis() < xpJammedPlayers.get(player.getUniqueId())) {
+                        event.setCancelled(true);
+                        player.sendMessage(ChatColor.RED + "🛑 You are XP Jammed! Cannot throw XP right now.");
+                        return;
+                    } else {
+                        xpJammedPlayers.remove(player.getUniqueId());
+                    }
+                }
+            }
+        }
+
         if (item == null || !item.hasItemMeta()) return;
         ItemMeta meta = item.getItemMeta();
 
@@ -281,7 +318,7 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
                 player.sendMessage(ChatColor.RED + "⚡ Berserk activated!");
                 player.playSound(player.getLocation(), Sound.ENTITY_ENDER_DRAGON_GROWL, 0.5f, 1.0f);
             }
-            // Stun Gun (Shoots Fireball)
+            // Stun Gun
             else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "stun_gun"), PersistentDataType.BYTE)) {
                 event.setCancelled(true);
                 item.setAmount(item.getAmount() - 1);
@@ -298,7 +335,7 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
                 player.sendMessage(ChatColor.LIGHT_PURPLE + "🎯 Focus Mode enabled for 60 seconds!");
                 player.playSound(player.getLocation(), Sound.ITEM_SPYGLASS_USE, 1.0f, 1.0f);
             }
-            // Throwable Web (Shoots snowball that creates 3x3 web trap for 15s)
+            // Throwable Web
             else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "throwable_web"), PersistentDataType.BYTE)) {
                 event.setCancelled(true);
                 item.setAmount(item.getAmount() - 1);
@@ -307,10 +344,27 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
                 player.sendMessage(ChatColor.AQUA + "🕸️ Web trap thrown!");
                 player.playSound(player.getLocation(), Sound.ENTITY_SNOWBALL_THROW, 1.0f, 1.0f);
             }
+            // XP Jammer Activation
+            else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "xp_jammer"), PersistentDataType.BYTE)) {
+                event.setCancelled(true);
+                item.setAmount(item.getAmount() - 1);
+                
+                int jammed = 0;
+                for (org.bukkit.entity.Entity entity : player.getNearbyEntities(12, 12, 12)) {
+                    if (entity instanceof Player && entity != player) {
+                        Player target = (Player) entity;
+                        xpJammedPlayers.put(target.getUniqueId(), System.currentTimeMillis() + 15000);
+                        target.sendMessage(ChatColor.DARK_PURPLE + "🛑 You have been XP Jammed! Cannot throw XP for 15 seconds!");
+                        jammed++;
+                    }
+                }
+                player.sendMessage(ChatColor.LIGHT_PURPLE + "🔮 XP Jammer activated! Jammed " + jammed + " enemies nearby.");
+                player.playSound(player.getLocation(), Sound.BLOCK_BEACON_DEACTIVATE, 1.0f, 1.0f);
+            }
         }
     }
 
-    // --- PROJECTILE HIT EVENT (For Throwable Web 3x3 Trap with 15s clear timer) ---
+    // --- PROJECTILE HIT EVENT (For Throwable Web 3x3 Trap) ---
     @EventHandler
     public void onProjectileHit(ProjectileHitEvent event) {
         if (event.getEntity() instanceof Snowball) {
@@ -323,7 +377,6 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
 
                 List<Block> changedBlocks = new ArrayList<>();
 
-                // Create 3x3x3 Cobweb Area
                 for (int x = -1; x <= 1; x++) {
                     for (int y = 0; y <= 2; y++) {
                         for (int z = -1; z <= 1; z++) {
@@ -336,7 +389,6 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
                     }
                 }
 
-                // Remove web blocks after 15 seconds (300 ticks)
                 if (!changedBlocks.isEmpty()) {
                     Bukkit.getScheduler().runTaskLater(this, () -> {
                         for (Block block : changedBlocks) {
@@ -344,7 +396,7 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
                                 block.setType(Material.AIR);
                             }
                         }
-                    }, 300L); // 15 seconds = 300 ticks
+                    }, 300L);
                 }
             }
         }
@@ -361,7 +413,7 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
             if (!item.hasItemMeta()) return;
             ItemMeta meta = item.getItemMeta();
 
-            // Item Counter
+// Item Counter
             if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "item_counter"), PersistentDataType.BYTE)) {
                 int hits = hitCounters.getOrDefault(attacker.getUniqueId(), 0) + 1;
                 if (hits >= 3) {
@@ -378,7 +430,7 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
                     attacker.sendMessage(ChatColor.YELLOW + "Hit counter: " + hits + "/3");
                 }
             }
-            // Sticky Fingers (With Honeycomb material)
+            // Sticky Fingers
             else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "sticky_fingers"), PersistentDataType.BYTE)) {
                 target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 300, 1));
                 target.sendMessage(ChatColor.RED + "🛡️ Sticky Fingers applied by " + attacker.getName() + "!");
@@ -398,6 +450,44 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
                     hitCounters.put(attacker.getUniqueId(), hits);
                 }
             }
+            // Neutralizer
+            else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "neutralizer"), PersistentDataType.BYTE)) {
+                int hits = neutralizerHits.getOrDefault(attacker.getUniqueId(), 0) + 1;
+                if (hits >= 3) {
+                    neutralizerHits.put(attacker.getUniqueId(), 0);
+                    
+                    ItemStack[] armor = target.getInventory().getArmorContents();
+                    boolean changed = false;
+                    for (int i = 0; i < armor.length; i++) {
+                        if (armor[i] != null && armor[i].getEnchantmentLevel(Enchantment.PROTECTION) == 4) {
+                            armor[i].addUnsafeEnchantment(Enchantment.PROTECTION, 3);
+                            changed = true;
+                        }
+                    }
+                    
+                    if (changed) {
+                        target.getInventory().setArmorContents(armor);
+                        attacker.sendMessage(ChatColor.GOLD + "Neutralized " + target.getName() + "'s armor for 8 seconds!");
+                        target.sendMessage(ChatColor.RED + "⚠️ Your armor's protection was reduced for 8 seconds!");
+                        
+                        Bukkit.getScheduler().runTaskLater(this, () -> {
+                            ItemStack[] newArmor = target.getInventory().getArmorContents();
+                            for (int i = 0; i < newArmor.length; i++) {
+                                if (newArmor[i] != null && newArmor[i].getEnchantmentLevel(Enchantment.PROTECTION) == 3) {
+                                    newArmor[i].addUnsafeEnchantment(Enchantment.PROTECTION, 4);
+                                }
+                            }
+                            target.getInventory().setArmorContents(newArmor);
+                            target.sendMessage(ChatColor.GREEN + "🛡️ Your armor protection has returned to normal!");
+                        }, 160L);
+                    } else {
+                        attacker.sendMessage(ChatColor.YELLOW + target.getName() + " does not have Protection 4 armor equipped.");
+                    }
+                } else {
+                    neutralizerHits.put(attacker.getUniqueId(), hits);
+                    attacker.sendMessage(ChatColor.GOLD + "Neutralizer hits: " + hits + "/3");
+                }
+            }
         }
     }
-        }
+}
