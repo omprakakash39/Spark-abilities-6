@@ -20,7 +20,9 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerPickupItemEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
@@ -42,6 +44,8 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
     private static SparkAbilities instance;
     private final HashMap<UUID, Integer> hitCounters = new HashMap<>();
     private final HashMap<UUID, Integer> neutralizerHits = new HashMap<>();
+    private final HashMap<UUID, Integer> stickyFingersHits = new HashMap<>();
+    private final HashMap<UUID, Long> stickyFingersJammed = new HashMap<>();
     private final HashMap<UUID, Long> xpJammedPlayers = new HashMap<>();
     
     private final String GUI_TITLE = ChatColor.DARK_PURPLE + "⚡ SparkMC Ability Menu";
@@ -58,7 +62,7 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
         }
         getServer().getPluginManager().registerEvents(this, this);
 
-        getLogger().info("SparkMC Abilities Loaded successfully with stackable items!");
+        getLogger().info("SparkMC Abilities Loaded successfully!");
     }
 
     @Override
@@ -114,28 +118,37 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
         return true;
     }
 
-    // --- OPEN GUI METHOD ---
+    // --- OPEN GUI METHOD (GUI ke andar saare items sirf 1 quantity ke rahenge) ---
     private void openAbilityGui(Player player) {
         Inventory gui = Bukkit.createInventory(null, 36, GUI_TITLE);
 
-        gui.addItem(getAbilityItem("berserk"));
-        gui.addItem(getAbilityItem("itemcounter"));
-        gui.addItem(getAbilityItem("stickyfingers"));
-        gui.addItem(getAbilityItem("clogger"));
-        gui.addItem(getAbilityItem("stungun"));
-        gui.addItem(getAbilityItem("focusmode"));
-        gui.addItem(getAbilityItem("deathtouch"));
-        gui.addItem(getAbilityItem("elixir"));
-        gui.addItem(getAbilityItem("hulk"));
-        gui.addItem(getAbilityItem("web"));
-        gui.addItem(getAbilityItem("xpjammer"));
-        gui.addItem(getAbilityItem("neutralizer"));
+        gui.addItem(getGuiAbilityItem("berserk"));
+        gui.addItem(getGuiAbilityItem("itemcounter"));
+        gui.addItem(getGuiAbilityItem("stickyfingers"));
+        gui.addItem(getGuiAbilityItem("clogger"));
+        gui.addItem(getGuiAbilityItem("stungun"));
+        gui.addItem(getGuiAbilityItem("focusmode"));
+        gui.addItem(getGuiAbilityItem("deathtouch"));
+        gui.addItem(getGuiAbilityItem("elixir"));
+        gui.addItem(getGuiAbilityItem("hulk"));
+        gui.addItem(getGuiAbilityItem("web"));
+        gui.addItem(getGuiAbilityItem("xpjammer"));
+        gui.addItem(getGuiAbilityItem("neutralizer"));
 
         player.openInventory(gui);
         player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1.0f, 1.0f);
     }
 
-    // --- CREATE ABILITY ITEM HELPER ---
+    // --- HELPER FOR GUI ITEMS (Amount = 1) ---
+    private ItemStack getGuiAbilityItem(String type) {
+        ItemStack item = getAbilityItem(type);
+        if (item != null) {
+            item.setAmount(1);
+        }
+        return item;
+    }
+
+    // --- CREATE ABILITY ITEM HELPER (Inventory mein stackable hone ke liye amount 64) ---
     private ItemStack getAbilityItem(String type) {
         ItemStack item = null;
         NamespacedKey key;
@@ -164,7 +177,7 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
                 item = new ItemStack(Material.HONEYCOMB, 64);
                 meta = item.getItemMeta();
                 meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&b&lSticky Fingers"));
-                meta.setLore(List.of(ChatColor.GRAY + "Hit player to slow them down"));
+                meta.setLore(List.of(ChatColor.GRAY + "Hit player 3 times to block pickup & drop"));
                 key = new NamespacedKey(this, "sticky_fingers");
                 meta.getPersistentDataContainer().set(key, PersistentDataType.BYTE, (byte) 1);
                 break;
@@ -197,7 +210,7 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
                 break;
 
             case "deathtouch":
-                item = new ItemStack(Material.SPLASH_POTION, 1); // Not stackable
+                item = new ItemStack(Material.SPLASH_POTION, 1);
                 PotionMeta pMeta1 = (PotionMeta) item.getItemMeta();
                 pMeta1.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&4&lDeath's Touch Potion"));
                 pMeta1.setLore(List.of(ChatColor.GRAY + "Instant Damage III Splash Potion"));
@@ -208,7 +221,7 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
                 return item;
 
             case "elixir":
-                item = new ItemStack(Material.SPLASH_POTION, 1); // Not stackable
+                item = new ItemStack(Material.SPLASH_POTION, 1);
                 PotionMeta pMeta2 = (PotionMeta) item.getItemMeta();
                 pMeta2.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&a&lElixir of Life Potion"));
                 pMeta2.setLore(List.of(ChatColor.GRAY + "Instant Health IX Potion"));
@@ -219,7 +232,7 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
                 return item;
 
             case "hulk":
-                item = new ItemStack(Material.SPLASH_POTION, 1); // Not stackable
+                item = new ItemStack(Material.SPLASH_POTION, 1);
                 PotionMeta pMeta3 = (PotionMeta) item.getItemMeta();
                 pMeta3.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&2&lHulk Potion"));
                 pMeta3.setLore(List.of(ChatColor.GRAY + "Strength III for 15 seconds"));
@@ -402,6 +415,33 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
         }
     }
 
+// --- STICKY FINGERS: Block Item Pickup ---
+    @EventHandler
+    public void onPickup(PlayerPickupItemEvent event) {
+        Player player = event.getPlayer();
+        if (stickyFingersJammed.containsKey(player.getUniqueId())) {
+            if (System.currentTimeMillis() < stickyFingersJammed.get(player.getUniqueId())) {
+                event.setCancelled(true);
+            } else {
+                stickyFingersJammed.remove(player.getUniqueId());
+            }
+        }
+    }
+
+    // --- STICKY FINGERS: Block Item Drop ---
+    @EventHandler
+    public void onDrop(PlayerDropItemEvent event) {
+        Player player = event.getPlayer();
+        if (stickyFingersJammed.containsKey(player.getUniqueId())) {
+            if (System.currentTimeMillis() < stickyFingersJammed.get(player.getUniqueId())) {
+                event.setCancelled(true);
+                player.sendMessage(ChatColor.RED + "🛑 You cannot drop items while affected by Sticky Fingers!");
+            } else {
+                stickyFingersJammed.remove(player.getUniqueId());
+            }
+        }
+    }
+
     // --- HIT ABILITIES ---
     @EventHandler
     public void onDamage(EntityDamageByEntityEvent event) {
@@ -413,7 +453,7 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
             if (!item.hasItemMeta()) return;
             ItemMeta meta = item.getItemMeta();
 
-// Item Counter
+            // Item Counter
             if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "item_counter"), PersistentDataType.BYTE)) {
                 int hits = hitCounters.getOrDefault(attacker.getUniqueId(), 0) + 1;
                 if (hits >= 3) {
@@ -430,10 +470,20 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
                     attacker.sendMessage(ChatColor.YELLOW + "Hit counter: " + hits + "/3");
                 }
             }
-            // Sticky Fingers
+            // Sticky Fingers (3 hits par 15 seconds ke liye pickup & drop block)
             else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "sticky_fingers"), PersistentDataType.BYTE)) {
-                target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 300, 1));
-                target.sendMessage(ChatColor.RED + "🛡️ Sticky Fingers applied by " + attacker.getName() + "!");
+                int hits = stickyFingersHits.getOrDefault(attacker.getUniqueId(), 0) + 1;
+                if (hits >= 3) {
+                    stickyFingersHits.put(attacker.getUniqueId(), 0);
+                    stickyFingersJammed.put(target.getUniqueId(), System.currentTimeMillis() + 15000);
+                    
+                    attacker.sendMessage(ChatColor.AQUA + "🍯 Sticky Fingers activated on " + target.getName() + " for 15 seconds!");
+                    target.sendMessage(ChatColor.RED + "⚠️ You are trapped by Sticky Fingers! Cannot pick up or drop items for 15 seconds.");
+                    target.playSound(target.getLocation(), Sound.ENTITY_HONEY_BLOCK_SLIDE, 1.0f, 1.0f);
+                } else {
+                    stickyFingersHits.put(attacker.getUniqueId(), hits);
+                    attacker.sendMessage(ChatColor.YELLOW + "Sticky Fingers hits: " + hits + "/3");
+                }
             }
             // Clogger
             else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "clogger"), PersistentDataType.BYTE)) {
