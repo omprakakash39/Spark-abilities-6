@@ -10,6 +10,7 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Snowball;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
@@ -24,23 +25,25 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.UUID;
 
 public final class SparkAbilities extends JavaPlugin implements CommandExecutor, Listener {
 
     private static SparkAbilities instance;
+    private final HashMap<UUID, Integer> hitCounters = new HashMap<>();
 
     @Override
     public void onEnable() {
         instance = this;
 
-        // Register Command & Events
         if (getCommand("sparkgive") != null) {
             getCommand("sparkgive").setExecutor(this);
         }
         getServer().getPluginManager().registerEvents(this, this);
 
-        getLogger().info("SparkMC Abilities Loaded successfully with Glow & Working Logic!");
+        getLogger().info("SparkMC Abilities Loaded successfully with all Crate items!");
     }
 
     @Override
@@ -62,6 +65,7 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
 
         if (args.length < 2) {
             sender.sendMessage(ChatColor.YELLOW + "Usage: /sparkgive <player> <ability>");
+            sender.sendMessage(ChatColor.GRAY + "Abilities: berserk, itemcounter, stickyfingers, clogger, stungun, focusmode, deathtouch, elixir, hulk, web");
             return true;
         }
 
@@ -81,8 +85,80 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
                 item = new ItemStack(Material.MAGMA_CREAM);
                 meta = item.getItemMeta();
                 meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&c&lBerserk"));
-                meta.setLore(List.of(ChatColor.GRAY + "Right-click for Strength & Speed III"));
+                meta.setLore(List.of(ChatColor.GRAY + "Right click for Strength & Speed III"));
                 key = new NamespacedKey(this, "berserk_item");
+                meta.getPersistentDataContainer().set(key, PersistentDataType.BYTE, (byte) 1);
+                break;
+
+            case "itemcounter":
+                item = new ItemStack(Material.PAINTING);
+                meta = item.getItemMeta();
+                meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&d&lItem Counter"));
+                meta.setLore(List.of(ChatColor.GRAY + "Hit player 3 times to check inventory stats"));
+                key = new NamespacedKey(this, "item_counter");
+                meta.getPersistentDataContainer().set(key, PersistentDataType.BYTE, (byte) 1);
+                break;
+
+            case "stickyfingers":
+                item = new ItemStack(Material.COBWEB);
+                meta = item.getItemMeta();
+                meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&b&lSticky Fingers"));
+                meta.setLore(List.of(ChatColor.GRAY + "Hit player to disable item pickup/drop"));
+                key = new NamespacedKey(this, "sticky_fingers");
+                meta.getPersistentDataContainer().set(key, PersistentDataType.BYTE, (byte) 1);
+                break;
+
+            case "clogger":
+                item = new ItemStack(Material.WOODEN_SHOVEL);
+                meta = item.getItemMeta();
+                meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&e&lClogger"));
+                meta.setLore(List.of(ChatColor.GRAY + "Hit player 3 times to clog inventory"));
+                key = new NamespacedKey(this, "clogger");
+                meta.getPersistentDataContainer().set(key, PersistentDataType.BYTE, (byte) 1);
+                break;
+
+            case "stungun":
+                item = new ItemStack(Material.DIAMOND_HOE);
+                meta = item.getItemMeta();
+                meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&b&lStun Gun"));
+                meta.setLore(List.of(ChatColor.GRAY + "Right click to fire freezing snowball"));
+                key = new NamespacedKey(this, "stun_gun");
+                meta.getPersistentDataContainer().set(key, PersistentDataType.BYTE, (byte) 1);
+                break;
+
+            case "focusmode":
+                item = new ItemStack(Material.SPYGLASS);
+                meta = item.getItemMeta();
+                meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&d&lFocus Mode"));
+                meta.setLore(List.of(ChatColor.GRAY + "Right click for 10% more damage boost"));
+                key = new NamespacedKey(this, "focus_mode");
+                meta.getPersistentDataContainer().set(key, PersistentDataType.BYTE, (byte) 1);
+                break;
+
+            case "deathtouch":
+                item = new ItemStack(Material.SPLASH_POTION);
+                meta = item.getItemMeta();
+                meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&4&lDeath's Touch Potion"));
+                meta.setLore(List.of(ChatColor.GRAY + "Instant Damage III Splash Potion"));
+                key = new NamespacedKey(this, "death_touch");
+                meta.getPersistentDataContainer().set(key, PersistentDataType.BYTE, (byte) 1);
+                break;
+
+            case "elixir":
+                item = new ItemStack(Material.SPLASH_POTION);
+                meta = item.getItemMeta();
+                meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&a&lElixir of Life Potion"));
+                meta.setLore(List.of(ChatColor.GRAY + "Instant Health IX Potion"));
+                key = new NamespacedKey(this, "elixir_life");
+                meta.getPersistentDataContainer().set(key, PersistentDataType.BYTE, (byte) 1);
+                break;
+
+            case "hulk":
+                item = new ItemStack(Material.SPLASH_POTION);
+                meta = item.getItemMeta();
+                meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&2&lHulk Potion"));
+                meta.setLore(List.of(ChatColor.GRAY + "Strength III for 15 seconds"));
+                key = new NamespacedKey(this, "hulk_potion");
                 meta.getPersistentDataContainer().set(key, PersistentDataType.BYTE, (byte) 1);
                 break;
 
@@ -90,62 +166,8 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
                 item = new ItemStack(Material.COBWEB);
                 meta = item.getItemMeta();
                 meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&b&lThrowable Web"));
-                meta.setLore(List.of(ChatColor.GRAY + "Right-click to throw a web"));
+                meta.setLore(List.of(ChatColor.GRAY + "Right click to throw web"));
                 key = new NamespacedKey(this, "throwable_web");
-                meta.getPersistentDataContainer().set(key, PersistentDataType.BYTE, (byte) 1);
-                break;
-
-            case "bow":
-                item = new ItemStack(Material.BOW);
-                meta = item.getItemMeta();
-                meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&d&lTeleport Bow"));
-                meta.setLore(List.of(ChatColor.GRAY + "Shoot players to teleport"));
-                key = new NamespacedKey(this, "teleport_bow");
-                meta.getPersistentDataContainer().set(key, PersistentDataType.BYTE, (byte) 1);
-                break;
-
-            case "disabler":
-                item = new ItemStack(Material.CLOCK);
-                meta = item.getItemMeta();
-                meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&b&lEffect Disabler"));
-                meta.setLore(List.of(ChatColor.GRAY + "Hit players to remove effects"));
-                key = new NamespacedKey(this, "effect_disabler");
-                meta.getPersistentDataContainer().set(key, PersistentDataType.BYTE, (byte) 1);
-                break;
-
-            case "neutralizer":
-                item = new ItemStack(Material.IRON_SWORD);
-                meta = item.getItemMeta();
-                meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&c&lNeutralizer"));
-                meta.setLore(List.of(ChatColor.GRAY + "Hit players to weaken armor"));
-                key = new NamespacedKey(this, "neutralizer");
-                meta.getPersistentDataContainer().set(key, PersistentDataType.BYTE, (byte) 1);
-                break;
-
-            case "antiball":
-                item = new ItemStack(Material.MAGENTA_GLAZED_TERRACOTTA);
-                meta = item.getItemMeta();
-                meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&c&lAnti-Ability Ball"));
-                meta.setLore(List.of(ChatColor.GRAY + "Right-click to block nearby abilities"));
-                key = new NamespacedKey(this, "anti_ability_ball");
-                meta.getPersistentDataContainer().set(key, PersistentDataType.BYTE, (byte) 1);
-                break;
-
-            case "xpjammer":
-                item = new ItemStack(Material.COMMAND_BLOCK);
-                meta = item.getItemMeta();
-                meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&5&lXP Jammer"));
-                meta.setLore(List.of(ChatColor.GRAY + "Prevents nearby XP drops"));
-                key = new NamespacedKey(this, "xp_jammer");
-                meta.getPersistentDataContainer().set(key, PersistentDataType.BYTE, (byte) 1);
-                break;
-
-            case "koth":
-                item = new ItemStack(Material.END_CRYSTAL);
-                meta = item.getItemMeta();
-                meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&6&lKOTH Starter"));
-                meta.setLore(List.of(ChatColor.GRAY + "Right-click to start KOTH event"));
-                key = new NamespacedKey(this, "koth_starter");
                 meta.getPersistentDataContainer().set(key, PersistentDataType.BYTE, (byte) 1);
                 break;
 
@@ -154,7 +176,6 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
                 return true;
         }
 
-        // MAKE ITEM GLOW (Add unbreaking enchantment + hide flags)
         if (meta != null && item != null) {
             meta.addEnchant(Enchantment.UNBREAKING, 1, true);
             meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
@@ -165,8 +186,7 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
         return true;
     }
 
-    // --- ABILITY LOGIC (EVENTS) ---
-
+    // --- INTERACT ABILITIES (RIGHT CLICK) ---
     @EventHandler
     public void onInteract(PlayerInteractEvent event) {
         Player player = event.getPlayer();
@@ -177,45 +197,64 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
 
         if (event.getAction() == Action.RIGHT_CLICK_AIR || event.getAction() == Action.RIGHT_CLICK_BLOCK) {
             
-            // 1. Berserk Ability
+            // Berserk
             if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "berserk_item"), PersistentDataType.BYTE)) {
                 event.setCancelled(true);
                 item.setAmount(item.getAmount() - 1);
-                player.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 200, 2)); // Strength III for 10s
-                player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 200, 2));     // Speed III for 10s
+                player.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 200, 2));
+                player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 200, 2));
                 player.sendMessage(ChatColor.RED + "⚡ Berserk activated!");
                 player.playSound(player.getLocation(), Sound.ENTITY_ENDER_DRAGON_GROWL, 0.5f, 1.0f);
             }
-
-            // 2. Throwable Web Ability
+            // Stun Gun
+            else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "stun_gun"), PersistentDataType.BYTE)) {
+                event.setCancelled(true);
+                item.setAmount(item.getAmount() - 1);
+                Snowball snowball = player.launchProjectile(Snowball.class);
+                snowball.setCustomName("StunGunBall");
+                player.sendMessage(ChatColor.AQUA + "❄️ Stun Gun fired!");
+                player.playSound(player.getLocation(), Sound.ENTITY_SNOWBALL_THROW, 1.0f, 1.0f);
+            }
+            // Focus Mode
+            else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "focus_mode"), PersistentDataType.BYTE)) {
+                event.setCancelled(true);
+                item.setAmount(item.getAmount() - 1);
+                player.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 1200, 0)); // +10% approx damage
+                player.sendMessage(ChatColor.LIGHT_PURPLE + "🎯 Focus Mode enabled for 60 seconds!");
+                player.playSound(player.getLocation(), Sound.ITEM_SPYGLASS_USE, 1.0f, 1.0f);
+            }
+            // Death's Touch Potion
+            else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "death_touch"), PersistentDataType.BYTE)) {
+                event.setCancelled(true);
+                item.setAmount(item.getAmount() - 1);
+                player.damage(6.0); // Instant Damage III equivalent
+                player.sendMessage(ChatColor.DARK_RED + "☠️ Death's Touch consumed!");
+            }
+            // Elixir of Life Potion
+            else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "elixir_life"), PersistentDataType.BYTE)) {
+                event.setCancelled(true);
+                item.setAmount(item.getAmount() - 1);
+                player.addPotionEffect(new PotionEffect(PotionEffectType.INSTANT_HEALTH, 1, 8));
+                player.sendMessage(ChatColor.GREEN + "❤️ Elixir of Life used!");
+            }
+            // Hulk Potion
+            else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "hulk_potion"), PersistentDataType.BYTE)) {
+                event.setCancelled(true);
+                item.setAmount(item.getAmount() - 1);
+                player.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 300, 2));
+                player.sendMessage(ChatColor.DARK_GREEN + "💪 Hulk Potion activated!");
+            }
+            // Throwable Web
             else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "throwable_web"), PersistentDataType.BYTE)) {
                 event.setCancelled(true);
                 item.setAmount(item.getAmount() - 1);
-                org.bukkit.entity.Snowball webBall = player.launchProjectile(org.bukkit.entity.Snowball.class);
-                webBall.setCustomName("ThrowableWeb");
+                player.launchProjectile(Snowball.class);
                 player.sendMessage(ChatColor.AQUA + "🕸️ Web thrown!");
-                player.playSound(player.getLocation(), Sound.ENTITY_SNOWBALL_THROW, 1.0f, 1.0f);
-            }
-
-            // 3. Anti-Ability Ball
-            else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "anti_ability_ball"), PersistentDataType.BYTE)) {
-                event.setCancelled(true);
-                item.setAmount(item.getAmount() - 1);
-                player.sendMessage(ChatColor.RED + "🛡️ Anti-Ability Ball activated!");
-                player.playSound(player.getLocation(), Sound.ENTITY_WITHER_SPAWN, 0.3f, 1.0f);
-            }
-
-            // 4. KOTH Starter
-            else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "koth_starter"), PersistentDataType.BYTE)) {
-                event.setCancelled(true);
-                item.setAmount(item.getAmount() - 1);
-                Bukkit.broadcastMessage(ChatColor.GOLD + "👑 KOTH Event has been started by " + player.getName() + "!");
-                player.playSound(player.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 1.0f, 1.0f);
             }
         }
     }
 
-    // Hit-based Abilities (Disabler & Neutralizer)
+    // --- HIT ABILITIES ---
     @EventHandler
     public void onDamage(EntityDamageByEntityEvent event) {
         if (event.getDamager() instanceof Player && event.getEntity() instanceof Player) {
@@ -226,21 +265,45 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
             if (!item.hasItemMeta()) return;
             ItemMeta meta = item.getItemMeta();
 
-            // Effect Disabler
-            if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "effect_disabler"), PersistentDataType.BYTE)) {
-                for (PotionEffect effect : target.getActivePotionEffects()) {
-                    target.removePotionEffect(effect.getType());
+            // Item Counter (Hits 3 times)
+            if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "item_counter"), PersistentDataType.BYTE)) {
+                int hits = hitCounters.getOrDefault(attacker.getUniqueId(), 0) + 1;
+                if (hits >= 3) {
+                    hitCounters.put(attacker.getUniqueId(), 0);
+                    int gapples = 0;
+                    for (ItemStack invItem : target.getInventory().getContents()) {
+                        if (invItem != null && (invItem.getType() == Material.GOLDEN_APPLE || invItem.getType() == Material.ENCHANTED_GOLDEN_APPLE)) {
+                            gapples += invItem.getAmount();
+                        }
+                    }
+                    attacker.sendMessage(ChatColor.GOLD + target.getName() + " has " + gapples + " Gapples and " + target.getLevel() + " XP levels!");
+                } else {
+                    hitCounters.put(attacker.getUniqueId(), hits);
+                    attacker.sendMessage(ChatColor.YELLOW + "Hit counter: " + hits + "/3");
                 }
-                target.sendMessage(ChatColor.RED + "⚠️ Your effects were disabled by " + attacker.getName() + "!");
-                attacker.sendMessage(ChatColor.GREEN + "Effect Disabler applied!");
             }
 
-            // Neutralizer
-            else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "neutralizer"), PersistentDataType.BYTE)) {
-                target.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, 140, 1)); // Weakness for 7s
-                target.sendMessage(ChatColor.RED + "🛡️ You have been neutralized!");
-                attacker.sendMessage(ChatColor.GREEN + "Neutralizer applied!");
+            // Sticky Fingers
+            else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "sticky_fingers"), PersistentDataType.BYTE)) {
+                target.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 300, 1));
+                target.sendMessage(ChatColor.RED + "🛡️ Sticky Fingers applied by " + attacker.getName() + "!");
+            }
+
+            // Clogger (Fill inventory with shovels)
+            else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "clogger"), PersistentDataType.BYTE)) {
+                int hits = hitCounters.getOrDefault(attacker.getUniqueId(), 0) + 1;
+                if (hits >= 3) {
+                    hitCounters.put(attacker.getUniqueId(), 0);
+                    for (int i = 0; i < target.getInventory().getSize(); i++) {
+                        if (target.getInventory().getItem(i) == null) {
+                            target.getInventory().setItem(i, new ItemStack(Material.WOODEN_SHOVEL));
+                        }
+                    }
+                    target.sendMessage(ChatColor.RED + "⚠️ Your inventory was clogged!");
+                } else {
+                    hitCounters.put(attacker.getUniqueId(), hits);
+                }
             }
         }
     }
-}
+                               }
