@@ -56,7 +56,10 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
     private final HashMap<UUID, Long> stickyFingersJammed = new HashMap<>();
     private final HashMap<UUID, Long> xpJammedPlayers = new HashMap<>();
     private final HashMap<UUID, Long> antiAbilityJammed = new HashMap<>();
-    private final HashMap<UUID, Long> lockInRestricted = new HashMap<>();
+    
+    // Fixed type maps for Lock In ability
+    private final HashMap<UUID, UUID> lockInTarget = new HashMap<>();
+    private final HashMap<UUID, Long> lockInTime = new HashMap<>();
     
     private final String GUI_TITLE = ChatColor.DARK_PURPLE + "⚡ SparkMC Ability Menu";
 
@@ -260,7 +263,6 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
                 PotionMeta pMetaEscape = (PotionMeta) item.getItemMeta();
                 pMetaEscape.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&b&lEscape Potion"));
                 pMetaEscape.setLore(List.of(ChatColor.GRAY + "life saver"));
-                // 3 minutes = 3 * 60 * 20 ticks = 3600 ticks
                 pMetaEscape.addCustomEffect(new PotionEffect(PotionEffectType.SPEED, 3600, 3), true);
                 pMetaEscape.addCustomEffect(new PotionEffect(PotionEffectType.WEAKNESS, 3600, 3), true);
                 pMetaEscape.addCustomEffect(new PotionEffect(PotionEffectType.ABSORPTION, 3600, 3), true);
@@ -398,9 +400,10 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
             }
         }
 
-        if (item == null || !item.hasItemMeta()) return;
+if (item == null || !item.hasItemMeta()) return;
         ItemMeta meta = item.getItemMeta();
-if (event.getAction() == Action.RIGHT_CLICK_AIR || event.getAction() == Action.RIGHT_CLICK_BLOCK) {
+
+        if (event.getAction() == Action.RIGHT_CLICK_AIR || event.getAction() == Action.RIGHT_CLICK_BLOCK) {
             
             if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "berserk_item"), PersistentDataType.BYTE)) {
                 event.setCancelled(true);
@@ -504,12 +507,17 @@ if (event.getAction() == Action.RIGHT_CLICK_AIR || event.getAction() == Action.R
             Player attacker = (Player) event.getDamager();
             Player target = (Player) event.getEntity();
 
-            if (lockInRestricted.containsKey(attacker.getUniqueId())) {
-                UUID lockedTarget = lockInRestricted.get(attacker.getUniqueId());
-                if (!target.getUniqueId().equals(lockedTarget) && System.currentTimeMillis() < lockInRestricted.get(attacker.getUniqueId() + "_time")) {
-                    event.setCancelled(true);
-                    attacker.sendMessage(ChatColor.RED + "🔒 You are locked in a 1v1 duel with someone else!");
-                    return;
+            if (lockInTarget.containsKey(attacker.getUniqueId())) {
+                UUID lockedTarget = lockInTarget.get(attacker.getUniqueId());
+                if (lockInTime.containsKey(attacker.getUniqueId()) && System.currentTimeMillis() < lockInTime.get(attacker.getUniqueId())) {
+                    if (!target.getUniqueId().equals(lockedTarget)) {
+                        event.setCancelled(true);
+                        attacker.sendMessage(ChatColor.RED + "🔒 You are locked in a 1v1 duel with someone else!");
+                        return;
+                    }
+                } else {
+                    lockInTarget.remove(attacker.getUniqueId());
+                    lockInTime.remove(attacker.getUniqueId());
                 }
             }
 
@@ -545,8 +553,8 @@ if (event.getAction() == Action.RIGHT_CLICK_AIR || event.getAction() == Action.R
                 int hits = lockInHits.getOrDefault(attacker.getUniqueId(), 0) + 1;
                 if (hits >= 3) {
                     lockInHits.put(attacker.getUniqueId(), 0);
-                    lockInRestricted.put(attacker.getUniqueId(), target.getUniqueId());
-                    lockInRestricted.put(attacker.getUniqueId() + "_time", System.currentTimeMillis() + 8000);
+                    lockInTarget.put(attacker.getUniqueId(), target.getUniqueId());
+                    lockInTime.put(attacker.getUniqueId(), System.currentTimeMillis() + 8000);
                     attacker.sendMessage(ChatColor.RED + "⚔️ Lock In activated! 1v1 secured with " + target.getName() + " for 8s.");
                     target.sendMessage(ChatColor.RED + "⚠️ You are locked in a 1v1 duel!");
                 } else {
@@ -601,4 +609,4 @@ if (event.getAction() == Action.RIGHT_CLICK_AIR || event.getAction() == Action.R
             }
         }
     }
-                }
+}
