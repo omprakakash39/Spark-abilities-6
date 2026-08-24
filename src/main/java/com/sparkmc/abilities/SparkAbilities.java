@@ -1,4 +1,4 @@
-package com.omprakash39.spark;
+package com.sparkmc.abilities;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -7,7 +7,9 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
 import org.bukkit.block.Block;
-import org.bukkit.enchantments.Enchantment;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.LargeFireball;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Snowball;
@@ -23,18 +25,18 @@ import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerPickupItemEvent;
-import org.bukkit.inventory.ItemFlag;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
 import java.util.*;
 
-public class SparkAbilityManager implements Listener {
+public final class SparkAbilities extends JavaPlugin implements Listener, CommandExecutor {
 
-    private final SparkPlugin plugin;
     private final String GUI_TITLE = ChatColor.DARK_GRAY + "Spark Ability GUI";
 
     // HashMaps for tracking states & cooldowns
@@ -52,8 +54,47 @@ public class SparkAbilityManager implements Listener {
     private final Map<UUID, Integer> topHatHits = new HashMap<>();
     private final Map<UUID, Integer> iglooHits = new HashMap<>();
 
-    public SparkAbilityManager(SparkPlugin plugin) {
-        this.plugin = plugin;
+    @Override
+    public void onEnable() {
+        // Register events and command
+        getServer().getPluginManager().registerEvents(this, this);
+        if (getCommand("sparkgui") != null) {
+            getCommand("sparkgui").setExecutor(this);
+        }
+        getLogger().info("SparkAbilities plugin has been enabled successfully!");
+    }
+
+    @Override
+    public void onDisable() {
+        getLogger().info("SparkAbilities plugin has been disabled.");
+    }
+
+    // --- /sparkgui Command Executor ---
+    @Override
+    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (!(sender instanceof Player)) {
+            sender.sendMessage("Only players can use this command!");
+            return true;
+        }
+
+        Player player = (Player) sender;
+        if (!player.hasPermission("spark.admin")) {
+            player.sendMessage(ChatColor.RED + "You do not have permission to use this command.");
+            return true;
+        }
+
+        Inventory gui = Bukkit.createInventory(null, 27, GUI_TITLE);
+
+        ItemStack item = new ItemStack(Material.PAPER, 1);
+        ItemMeta meta = item.getItemMeta();
+        meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&f&lScrambler"));
+        meta.setLore(List.of(ChatColor.GRAY + "Click to get Scrambler ability item"));
+        item.setItemMeta(meta);
+
+        gui.setItem(0, item);
+
+        player.openInventory(gui);
+        return true;
     }
 
     @EventHandler
@@ -80,7 +121,7 @@ public class SparkAbilityManager implements Listener {
 
         if (event.getAction() == Action.RIGHT_CLICK_AIR || event.getAction() == Action.RIGHT_CLICK_BLOCK) {
             
-            if (meta.getPersistentDataContainer().has(new NamespacedKey(plugin, "berserk_item"), PersistentDataType.BYTE)) {
+            if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "berserk_item"), PersistentDataType.BYTE)) {
                 event.setCancelled(true);
                 item.setAmount(item.getAmount() - 1);
                 player.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 200, 2));
@@ -88,7 +129,7 @@ public class SparkAbilityManager implements Listener {
                 player.sendMessage(ChatColor.RED + "⚡ Berserk activated!");
                 player.playSound(player.getLocation(), Sound.ENTITY_ENDER_DRAGON_GROWL, 0.5f, 1.0f);
             }
-            else if (meta.getPersistentDataContainer().has(new NamespacedKey(plugin, "stun_gun"), PersistentDataType.BYTE)) {
+            else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "stun_gun"), PersistentDataType.BYTE)) {
                 event.setCancelled(true);
                 item.setAmount(item.getAmount() - 1);
                 LargeFireball fireball = player.launchProjectile(LargeFireball.class);
@@ -96,14 +137,14 @@ public class SparkAbilityManager implements Listener {
                 player.sendMessage(ChatColor.AQUA + "🔥 Fireball shot from Stun Gun!");
                 player.playSound(player.getLocation(), Sound.ENTITY_GHAST_SHOOT, 1.0f, 1.0f);
             }
-            else if (meta.getPersistentDataContainer().has(new NamespacedKey(plugin, "focus_mode"), PersistentDataType.BYTE)) {
+            else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "focus_mode"), PersistentDataType.BYTE)) {
                 event.setCancelled(true);
                 item.setAmount(item.getAmount() - 1);
                 player.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 1200, 0));
                 player.sendMessage(ChatColor.LIGHT_PURPLE + "🎯 Focus Mode enabled for 60 seconds!");
                 player.playSound(player.getLocation(), Sound.ITEM_SPYGLASS_USE, 1.0f, 1.0f);
             }
-            else if (meta.getPersistentDataContainer().has(new NamespacedKey(plugin, "throwable_web"), PersistentDataType.BYTE)) {
+            else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "throwable_web"), PersistentDataType.BYTE)) {
                 event.setCancelled(true);
                 item.setAmount(item.getAmount() - 1);
                 Snowball snowball = player.launchProjectile(Snowball.class);
@@ -111,7 +152,7 @@ public class SparkAbilityManager implements Listener {
                 player.sendMessage(ChatColor.AQUA + "🕸️ Web trap thrown!");
                 player.playSound(player.getLocation(), Sound.ENTITY_SNOWBALL_THROW, 1.0f, 1.0f);
             }
-            else if (meta.getPersistentDataContainer().has(new NamespacedKey(plugin, "xp_jammer"), PersistentDataType.BYTE)) {
+            else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "xp_jammer"), PersistentDataType.BYTE)) {
                 event.setCancelled(true);
                 item.setAmount(item.getAmount() - 1);
                 
@@ -156,12 +197,11 @@ public class SparkAbilityManager implements Listener {
             }
         }
         
-        // Prevent equipping Top Hat directly into helmet slot (Slot 39 or cursor shift-click)
         if (event.getRawSlot() == 5 || (event.getCurrentItem() != null && event.getCurrentItem().hasItemMeta() && 
-            event.getCurrentItem().getItemMeta().getPersistentDataContainer().has(new NamespacedKey(plugin, "top_hat"), PersistentDataType.BYTE))) {
+            event.getCurrentItem().getItemMeta().getPersistentDataContainer().has(new NamespacedKey(this, "top_hat"), PersistentDataType.BYTE))) {
             if (event.getSlot() == 39 || event.isShiftClick()) {
                 ItemStack item = event.getCurrentItem();
-                if (item != null && item.hasItemMeta() && item.getItemMeta().getPersistentDataContainer().has(new NamespacedKey(plugin, "top_hat"), PersistentDataType.BYTE)) {
+                if (item != null && item.hasItemMeta() && item.getItemMeta().getPersistentDataContainer().has(new NamespacedKey(this, "top_hat"), PersistentDataType.BYTE)) {
                     if (event.getRawSlot() == 5 || event.getSlot() == 39) {
                         event.setCancelled(true);
                         event.getWhoClicked().sendMessage(ChatColor.RED + "🛑 You cannot equip Top Hat directly as a helmet!");
@@ -226,7 +266,7 @@ public class SparkAbilityManager implements Listener {
                 }
 
                 if (!changedBlocks.isEmpty()) {
-                    Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                    Bukkit.getScheduler().runTaskLater(this, () -> {
                         for (Block block : changedBlocks) {
                             if (block.getType() == Material.COBWEB) {
                                 block.setType(Material.AIR);
@@ -287,7 +327,7 @@ public class SparkAbilityManager implements Listener {
             if (!item.hasItemMeta()) return;
             ItemMeta meta = item.getItemMeta();
 
-            if (meta.getPersistentDataContainer().has(new NamespacedKey(plugin, "anti_ability"), PersistentDataType.BYTE)) {
+            if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "anti_ability"), PersistentDataType.BYTE)) {
                 int hits = antiAbilityHits.getOrDefault(attacker.getUniqueId(), 0) + 1;
                 if (hits >= 3) {
                     antiAbilityHits.put(attacker.getUniqueId(), 0);
@@ -298,7 +338,7 @@ public class SparkAbilityManager implements Listener {
                     antiAbilityHits.put(attacker.getUniqueId(), hits);
                 }
             }
-            else if (meta.getPersistentDataContainer().has(new NamespacedKey(plugin, "effect_disabler"), PersistentDataType.BYTE)) {
+            else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "effect_disabler"), PersistentDataType.BYTE)) {
                 int hits = effectDisablerHits.getOrDefault(attacker.getUniqueId(), 0) + 1;
                 if (hits >= 3) {
                     effectDisablerHits.put(attacker.getUniqueId(), 0);
@@ -311,7 +351,7 @@ public class SparkAbilityManager implements Listener {
                     effectDisablerHits.put(attacker.getUniqueId(), hits);
                 }
             }
-            else if (meta.getPersistentDataContainer().has(new NamespacedKey(plugin, "lock_in"), PersistentDataType.BYTE)) {
+            else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "lock_in"), PersistentDataType.BYTE)) {
                 int hits = lockInHits.getOrDefault(attacker.getUniqueId(), 0) + 1;
                 if (hits >= 3) {
                     lockInHits.put(attacker.getUniqueId(), 0);
@@ -323,7 +363,7 @@ public class SparkAbilityManager implements Listener {
                     lockInHits.put(attacker.getUniqueId(), hits);
                 }
             }
-            else if (meta.getPersistentDataContainer().has(new NamespacedKey(plugin, "crafting_chaos"), PersistentDataType.BYTE)) {
+            else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "crafting_chaos"), PersistentDataType.BYTE)) {
                 int hits = craftingChaosHits.getOrDefault(attacker.getUniqueId(), 0) + 1;
                 if (hits >= 3) {
                     craftingChaosHits.put(attacker.getUniqueId(), 0);
@@ -333,7 +373,7 @@ public class SparkAbilityManager implements Listener {
                     craftingChaosHits.put(attacker.getUniqueId(), hits);
                 }
             }
-            else if (meta.getPersistentDataContainer().has(new NamespacedKey(plugin, "scrambler"), PersistentDataType.BYTE)) {
+            else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "scrambler"), PersistentDataType.BYTE)) {
                 int hits = scramblerHits.getOrDefault(attacker.getUniqueId(), 0) + 1;
                 if (hits >= 3) {
                     scramblerHits.put(attacker.getUniqueId(), 0);
@@ -353,15 +393,15 @@ public class SparkAbilityManager implements Listener {
                     scramblerHits.put(attacker.getUniqueId(), hits);
                 }
             }
-            else if (meta.getPersistentDataContainer().has(new NamespacedKey(plugin, "top_hat"), PersistentDataType.BYTE)) {
+            else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "top_hat"), PersistentDataType.BYTE)) {
                 int hits = topHatHits.getOrDefault(attacker.getUniqueId(), 0) + 1;
                 if (hits >= 3) {
                     topHatHits.put(attacker.getUniqueId(), 0);
                     ItemStack oldHelmet = target.getInventory().getHelmet();
-                    target.getInventory().setHelmet(new ItemStack(Material.GOLDEN_HELMET));
+                    target.getInventory().setHelmet(newItemStack(Material.GOLDEN_HELMET));
                     attacker.sendMessage(ChatColor.YELLOW + "🎩 Top Hat swapped " + target.getName() + "'s helmet!");
                     
-                    Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                    Bukkit.getScheduler().runTaskLater(this, () -> {
                         target.getInventory().setHelmet(oldHelmet);
                         target.sendMessage(ChatColor.GREEN + "🛡️ Your original helmet has been restored!");
                     }, 200L);
@@ -369,7 +409,7 @@ public class SparkAbilityManager implements Listener {
                     topHatHits.put(attacker.getUniqueId(), hits);
                 }
             }
-            else if (meta.getPersistentDataContainer().has(new NamespacedKey(plugin, "igloo"), PersistentDataType.BYTE)) {
+            else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "igloo"), PersistentDataType.BYTE)) {
                 int hits = iglooHits.getOrDefault(attacker.getUniqueId(), 0) + 1;
                 if (hits >= 3) {
                     iglooHits.put(attacker.getUniqueId(), 0);
@@ -395,7 +435,7 @@ public class SparkAbilityManager implements Listener {
                     target.sendMessage(ChatColor.BLUE + "🧊 You have been trapped in an Igloo hemi-sphere spear!");
 
                     if (!domeBlocks.isEmpty()) {
-                        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                        Bukkit.getScheduler().runTaskLater(this, () -> {
                             for (Block b : domeBlocks) {
                                 if (b.getType() == Material.PACKED_ICE) {
                                     b.setType(Material.AIR);
