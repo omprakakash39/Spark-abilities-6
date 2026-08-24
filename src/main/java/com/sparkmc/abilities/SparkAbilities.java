@@ -8,7 +8,6 @@ import org.bukkit.entity.ThrownPotion;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
-import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.PotionSplashEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -21,7 +20,7 @@ import org.bukkit.potion.PotionEffectType;
 
 import java.util.*;
 
-public final class SparkAbilityPlugin implements Listener {
+public final class SparkAbilities implements Listener {
 
     private final Map<UUID, Long> cooldowns = new HashMap<>();
     private final Map<UUID, UUID> lockedInTarget = new HashMap<>();
@@ -39,7 +38,7 @@ public final class SparkAbilityPlugin implements Listener {
 
     private static final String GUI_TITLE = ChatColor.DARK_PURPLE + "Ability Crate Preview";
 
-    // Helper method to create formatted items with bold names and lore descriptions
+    // Helper method for standard items
     public ItemStack createAbilityItem(Material material, String boldName, List<String> loreLines, String keyName) {
         ItemStack item = new ItemStack(material);
         ItemMeta meta = item.getItemMeta();
@@ -63,6 +62,28 @@ public final class SparkAbilityPlugin implements Listener {
         return item;
     }
 
+    // Helper method for custom splash potions
+    public ItemStack createPotionItem(String boldName, List<String> loreLines, String keyName) {
+        ItemStack item = new ItemStack(Material.SPLASH_POTION);
+        ItemMeta meta = item.getItemMeta();
+        if (meta != null) {
+            meta.setDisplayName(ChatColor.DARK_PURPLE + "" + ChatColor.BOLD + boldName);
+            
+            List<String> fullLore = new ArrayList<>();
+            for (String line : loreLines) {
+                fullLore.add(ChatColor.RED + line);
+            }
+            fullLore.add("");
+            fullLore.add(ChatColor.DARK_PURPLE + "PURCHASE ADDITIONAL KEYS");
+            fullLore.add(ChatColor.GREEN + "AT: STORE.FLAREMC.ORG");
+            
+            meta.setLore(fullLore);
+            meta.getPersistentDataContainer().set(new NamespacedKey("spark", keyName), PersistentDataType.BYTE, (byte) 1);
+            item.setItemMeta(meta);
+        }
+        return item;
+    }
+
     @EventHandler
     public void onPlayerInteract(PlayerInteractEvent event) {
         Player player = event.getPlayer();
@@ -71,7 +92,6 @@ public final class SparkAbilityPlugin implements Listener {
         if (item == null || !item.hasItemMeta()) return;
         ItemMeta meta = item.getItemMeta();
 
-        // Check sticky fingers jam
         if (stickyFingersJammed.containsKey(player.getUniqueId())) {
             if (System.currentTimeMillis() < stickyFingersJammed.get(player.getUniqueId())) {
                 event.setCancelled(true);
@@ -93,11 +113,10 @@ public final class SparkAbilityPlugin implements Listener {
                 event.setCancelled(true);
                 player.launchProjectile(org.bukkit.entity.Snowball.class);
                 player.sendMessage(ChatColor.AQUA + "⚡ Fired Stun Gun projectile!");
-                // Stun Gun destroy on use
-                item.setAmount(item.getAmount() - 1);
+                item.setAmount(item.getAmount() - 1); // Stun gun destroyed after 1 use
             } else if (meta.getPersistentDataContainer().has(focusModeKey, PersistentDataType.BYTE)) {
                 event.setCancelled(true);
-                player.addPotionEffect(new PotionEffect(PotionEffectType.INCREASE_DAMAGE, 1200, 0, false, true));
+                player.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 1200, 0, false, true));
                 player.sendMessage(ChatColor.GOLD + "🎯 Focus Mode activated!");
             } else if (meta.getPersistentDataContainer().has(kothKey, PersistentDataType.BYTE)) {
                 event.setCancelled(true);
@@ -169,8 +188,7 @@ public final class SparkAbilityPlugin implements Listener {
                         }
                     }
                     attacker.sendMessage(ChatColor.GOLD + "Clogger activated!");
-                    // Clogger destroy on activation
-                    item.setAmount(item.getAmount() - 1);
+                    item.setAmount(item.getAmount() - 1); // Clogger destroyed after 3 hits activation
                 } else {
                     cloggerHits.put(attacker.getUniqueId(), hits);
                 }
@@ -192,7 +210,7 @@ public final class SparkAbilityPlugin implements Listener {
                             }
                         }
                     }
-                    Bukkit.getScheduler().runTaskLater(SparkAbilityPlugin.getPlugin(SparkAbilityPlugin.class), () -> {
+                    Bukkit.getScheduler().runTaskLater(SparkAbilities.getPlugin(SparkAbilities.class), () -> {
                         for (Block b : iceBlocks) {
                             if (b.getType() == Material.PACKED_ICE) b.setType(Material.AIR);
                         }
@@ -241,7 +259,7 @@ public final class SparkAbilityPlugin implements Listener {
                     topHatHits.put(attacker.getUniqueId(), 0);
                     ItemStack oldHelmet = target.getInventory().getHelmet();
                     target.getInventory().setHelmet(new ItemStack(Material.GOLDEN_HELMET));
-                    Bukkit.getScheduler().runTaskLater(SparkAbilityPlugin.getPlugin(SparkAbilityPlugin.class), () -> {
+                    Bukkit.getScheduler().runTaskLater(SparkAbilities.getPlugin(SparkAbilities.class), () -> {
                         target.getInventory().setHelmet(oldHelmet);
                     }, 160L);
                     attacker.sendMessage(ChatColor.GOLD + "Top Hat applied!");
@@ -252,7 +270,6 @@ public final class SparkAbilityPlugin implements Listener {
         }
     }
 
-    // Splash Potion handling for custom effects on other players
     @EventHandler
     public void onPotionSplash(PotionSplashEvent event) {
         ThrownPotion potion = event.getEntity();
@@ -260,15 +277,15 @@ public final class SparkAbilityPlugin implements Listener {
             ItemMeta meta = potion.getItem().getItemMeta();
             if (meta.getPersistentDataContainer().has(new NamespacedKey("spark", "hulk_potion"), PersistentDataType.BYTE)) {
                 for (LivingEntity entity : event.getAffectedEntities()) {
-                    entity.addPotionEffect(new PotionEffect(PotionEffectType.INCREASE_DAMAGE, 300, 2));
+                    entity.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 300, 2));
                 }
             } else if (meta.getPersistentDataContainer().has(new NamespacedKey("spark", "death_touch"), PersistentDataType.BYTE)) {
                 for (LivingEntity entity : event.getAffectedEntities()) {
-                    entity.addPotionEffect(new PotionEffect(PotionEffectType.HARM, 1, 2));
+                    entity.addPotionEffect(new PotionEffect(PotionEffectType.INSTANT_DAMAGE, 1, 2));
                 }
             } else if (meta.getPersistentDataContainer().has(new NamespacedKey("spark", "elixir_of_life"), PersistentDataType.BYTE)) {
                 for (LivingEntity entity : event.getAffectedEntities()) {
-                    entity.addPotionEffect(new PotionEffect(PotionEffectType.HEAL, 1, 8));
+                    entity.addPotionEffect(new PotionEffect(PotionEffectType.INSTANT_HEALTH, 1, 8));
                 }
             }
         }
@@ -287,4 +304,4 @@ public final class SparkAbilityPlugin implements Listener {
             }
         }
     }
-                    }
+                }
