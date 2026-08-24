@@ -39,7 +39,6 @@ public final class SparkAbilities extends JavaPlugin implements Listener, Comman
 
     private final String GUI_TITLE = ChatColor.DARK_GRAY + "Spark Ability GUI";
 
-    // HashMaps for tracking states & cooldowns
     private final Map<UUID, Long> antiAbilityJammed = new HashMap<>();
     private final Map<UUID, Long> xpJammedPlayers = new HashMap<>();
     private final Map<UUID, Long> stickyFingersJammed = new HashMap<>();
@@ -56,7 +55,6 @@ public final class SparkAbilities extends JavaPlugin implements Listener, Comman
 
     @Override
     public void onEnable() {
-        // Register events and command
         getServer().getPluginManager().registerEvents(this, this);
         if (getCommand("sparkgui") != null) {
             getCommand("sparkgui").setExecutor(this);
@@ -69,7 +67,6 @@ public final class SparkAbilities extends JavaPlugin implements Listener, Comman
         getLogger().info("SparkAbilities plugin has been disabled.");
     }
 
-    // --- /sparkgui Command Executor ---
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player)) {
@@ -92,7 +89,6 @@ public final class SparkAbilities extends JavaPlugin implements Listener, Comman
         item.setItemMeta(meta);
 
         gui.setItem(0, item);
-
         player.openInventory(gui);
         return true;
     }
@@ -120,7 +116,6 @@ public final class SparkAbilities extends JavaPlugin implements Listener, Comman
         ItemMeta meta = item.getItemMeta();
 
         if (event.getAction() == Action.RIGHT_CLICK_AIR || event.getAction() == Action.RIGHT_CLICK_BLOCK) {
-            
             if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "berserk_item"), PersistentDataType.BYTE)) {
                 event.setCancelled(true);
                 item.setAmount(item.getAmount() - 1);
@@ -164,7 +159,6 @@ public final class SparkAbilities extends JavaPlugin implements Listener, Comman
                         affectedCount++;
                     }
                 }
-                
                 player.sendMessage(ChatColor.DARK_PURPLE + "🔮 XP Jammer activated! Affected " + affectedCount + " surrounding enemies.");
                 player.playSound(player.getLocation(), Sound.BLOCK_BEACON_POWER_SELECT, 1.0f, 1.0f);
             }
@@ -233,9 +227,7 @@ public final class SparkAbilities extends JavaPlugin implements Listener, Comman
             if (item.hasItemMeta() && item.getItemMeta().hasDisplayName()) {
                 String name = item.getItemMeta().getDisplayName();
                 if (name.contains("Death's Touch")) {
-                    event.getAffectedEntities().forEach(entity -> {
-                        entity.setFireTicks(40);
-                    });
+                    event.getAffectedEntities().forEach(entity -> entity.setFireTicks(40));
                 }
             }
         }
@@ -252,7 +244,6 @@ public final class SparkAbilities extends JavaPlugin implements Listener, Comman
                 }
 
                 List<Block> changedBlocks = new ArrayList<>();
-
                 for (int x = -1; x <= 1; x++) {
                     for (int y = 0; y <= 2; y++) {
                         for (int z = -1; z <= 1; z++) {
@@ -282,9 +273,7 @@ public final class SparkAbilities extends JavaPlugin implements Listener, Comman
     public void onPickup(PlayerPickupItemEvent event) {
         Player player = event.getPlayer();
         if (stickyFingersJammed.containsKey(player.getUniqueId())) {
-            if (System.currentTimeMillis() < stickyFingersJammed.get(player.getUniqueId())) {
-                event.setCancelled(true);
-            } else {
+            if (System.currentTimeMillis() >= stickyFingersJammed.get(player.getUniqueId())) {
                 stickyFingersJammed.remove(player.getUniqueId());
             }
         }
