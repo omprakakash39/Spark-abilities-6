@@ -249,7 +249,7 @@ public final class SparkAbilities extends JavaPlugin implements Listener, Comman
             else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "elixir_potion"), PersistentDataType.BYTE)) {
                 event.setCancelled(true);
                 item.setAmount(item.getAmount() - 1);
-                player.addPotionEffect(new PotionEffect(PotionEffectType.HEAL, 1, 9));
+                player.addPotionEffect(new PotionEffect(PotionEffectType.INSTANT_HEALTH, 1, 9));
                 player.sendMessage(ChatColor.GREEN + "Elixir of Life applied!");
             }
             else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "escape_potion"), PersistentDataType.BYTE)) {
@@ -318,8 +318,8 @@ public final class SparkAbilities extends JavaPlugin implements Listener, Comman
                 }
             } else if ("CustomStunGunBall".equals(sb.getCustomName()) && event.getHitEntity() instanceof Player) {
                 Player target = (Player) event.getHitEntity();
-                target.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 160, 5, false, true));
-                target.addPotionEffect(new PotionEffect(PotionEffectType.JUMP, 160, 250, false, true));
+                target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 160, 5, false, true));
+                target.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, 160, 250, false, true));
                 target.sendMessage(ChatColor.RED + "⚡ Paralyzed by Stun Gun!");
             }
         }
@@ -358,7 +358,7 @@ public final class SparkAbilities extends JavaPlugin implements Listener, Comman
                 int hits = itemCounterHits.getOrDefault(attacker.getUniqueId(), 0) + 1;
                 if (hits >= 3) {
                     itemCounterHits.put(attacker.getUniqueId(), 0);
-                    attacker.sendMessage(ChatColor.LIGHT_PURPLE + "Item Counter scanned target inventory.");
+                    attacker.sendMessage(ChatColor.LIGHT_PURPLE + "Item Counter scanned " + target.getName());
                 } else {
                     itemCounterHits.put(attacker.getUniqueId(), hits);
                 }
@@ -418,7 +418,7 @@ public final class SparkAbilities extends JavaPlugin implements Listener, Comman
                 if (hits >= 3) {
                     lockInHits.put(attacker.getUniqueId(), 0);
                     lockedInTarget.put(attacker.getUniqueId(), target.getUniqueId());
-                    attacker.sendMessage(ChatColor.RED + "🔒 Locked in 1v1 duel!");
+                    attacker.sendMessage(ChatColor.RED + "🔒 Locked in duel!");
                 } else {
                     lockInHits.put(attacker.getUniqueId(), hits);
                 }
