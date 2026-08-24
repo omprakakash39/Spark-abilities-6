@@ -35,6 +35,7 @@ import org.bukkit.potion.PotionEffectType;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
@@ -45,8 +46,17 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
     private final HashMap<UUID, Integer> hitCounters = new HashMap<>();
     private final HashMap<UUID, Integer> neutralizerHits = new HashMap<>();
     private final HashMap<UUID, Integer> stickyFingersHits = new HashMap<>();
+    private final HashMap<UUID, Integer> antiAbilityHits = new HashMap<>();
+    private final HashMap<UUID, Integer> effectDisablerHits = new HashMap<>();
+    private final HashMap<UUID, Integer> lockInHits = new HashMap<>();
+    private final HashMap<UUID, Integer> craftingChaosHits = new HashMap<>();
+    private final HashMap<UUID, Integer> scramblerHits = new HashMap<>();
+    private final HashMap<UUID, Integer> topHatHits = new HashMap<>();
+
     private final HashMap<UUID, Long> stickyFingersJammed = new HashMap<>();
     private final HashMap<UUID, Long> xpJammedPlayers = new HashMap<>();
+    private final HashMap<UUID, Long> antiAbilityJammed = new HashMap<>();
+    private final HashMap<UUID, Long> lockInRestricted = new HashMap<>();
     
     private final String GUI_TITLE = ChatColor.DARK_PURPLE + "⚡ SparkMC Ability Menu";
 
@@ -118,7 +128,7 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
     }
 
     private void openAbilityGui(Player player) {
-        Inventory gui = Bukkit.createInventory(null, 36, GUI_TITLE);
+        Inventory gui = Bukkit.createInventory(null, 45, GUI_TITLE);
 
         gui.addItem(getGuiAbilityItem("berserk"));
         gui.addItem(getGuiAbilityItem("itemcounter"));
@@ -129,9 +139,16 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
         gui.addItem(getGuiAbilityItem("deathtouch"));
         gui.addItem(getGuiAbilityItem("elixir"));
         gui.addItem(getGuiAbilityItem("hulk"));
+        gui.addItem(getGuiAbilityItem("escapepotion"));
         gui.addItem(getGuiAbilityItem("web"));
         gui.addItem(getGuiAbilityItem("xpjammer"));
         gui.addItem(getGuiAbilityItem("neutralizer"));
+        gui.addItem(getGuiAbilityItem("antiability"));
+        gui.addItem(getGuiAbilityItem("effectdisabler"));
+        gui.addItem(getGuiAbilityItem("lockin"));
+        gui.addItem(getGuiAbilityItem("craftingchaos"));
+        gui.addItem(getGuiAbilityItem("scrambler"));
+        gui.addItem(getGuiAbilityItem("tophat"));
 
         player.openInventory(gui);
         player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1.0f, 1.0f);
@@ -238,6 +255,22 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
                 item.setItemMeta(pMeta3);
                 return item;
 
+            case "escapepotion":
+                item = new ItemStack(Material.SPLASH_POTION, 1);
+                PotionMeta pMetaEscape = (PotionMeta) item.getItemMeta();
+                pMetaEscape.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&b&lEscape Potion"));
+                pMetaEscape.setLore(List.of(ChatColor.GRAY + "life saver"));
+                // 3 minutes = 3 * 60 * 20 ticks = 3600 ticks
+                pMetaEscape.addCustomEffect(new PotionEffect(PotionEffectType.SPEED, 3600, 3), true);
+                pMetaEscape.addCustomEffect(new PotionEffect(PotionEffectType.WEAKNESS, 3600, 3), true);
+                pMetaEscape.addCustomEffect(new PotionEffect(PotionEffectType.ABSORPTION, 3600, 3), true);
+                pMetaEscape.addCustomEffect(new PotionEffect(PotionEffectType.RESISTANCE, 3600, 3), true);
+                pMetaEscape.addCustomEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, 3600, 0), true);
+                key = new NamespacedKey(this, "escape_potion");
+                pMetaEscape.getPersistentDataContainer().set(key, PersistentDataType.BYTE, (byte) 1);
+                item.setItemMeta(pMetaEscape);
+                return item;
+
             case "web":
                 item = new ItemStack(Material.COBWEB, 64);
                 meta = item.getItemMeta();
@@ -251,7 +284,7 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
                 item = new ItemStack(Material.REPEATING_COMMAND_BLOCK, 64);
                 meta = item.getItemMeta();
                 meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&5&lXP Jammer"));
-                meta.setLore(List.of(ChatColor.GRAY + "Right click to stop all enemies within", ChatColor.GOLD + "12 blocks" + ChatColor.GRAY + " from throwing XP for " + ChatColor.GOLD + "15 seconds!"));
+                meta.setLore(List.of(ChatColor.GRAY + "Right click to stop enemies from throwing XP"));
                 key = new NamespacedKey(this, "xp_jammer");
                 meta.getPersistentDataContainer().set(key, PersistentDataType.BYTE, (byte) 1);
                 break;
@@ -260,8 +293,62 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
                 item = new ItemStack(Material.BLAZE_ROD, 64);
                 meta = item.getItemMeta();
                 meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&6&lNeutralizer"));
-                meta.setLore(List.of(ChatColor.GRAY + "Hit a player " + ChatColor.RED + "3 times" + ChatColor.GRAY + " to swap their", ChatColor.GOLD + "Protection 4" + ChatColor.GRAY + " armor pieces to " + ChatColor.GOLD + "Protection 3" + ChatColor.GRAY + " for " + ChatColor.GOLD + "8 seconds."));
+                meta.setLore(List.of(ChatColor.GRAY + "Hit 3 times to downgrade armor protection"));
                 key = new NamespacedKey(this, "neutralizer");
+                meta.getPersistentDataContainer().set(key, PersistentDataType.BYTE, (byte) 1);
+                break;
+
+            case "antiability":
+                item = new ItemStack(Material.ENDER_EYE, 64);
+                meta = item.getItemMeta();
+                meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&5&lAnti Ability Ball"));
+                meta.setLore(List.of(ChatColor.GRAY + "Hit player 3 times to block ability usage for 10s"));
+                key = new NamespacedKey(this, "anti_ability");
+                meta.getPersistentDataContainer().set(key, PersistentDataType.BYTE, (byte) 1);
+                break;
+
+            case "effectdisabler":
+                item = new ItemStack(Material.CLOCK, 64);
+                meta = item.getItemMeta();
+                meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&e&lEffect Disabler"));
+                meta.setLore(List.of(ChatColor.GRAY + "Hit player 3 times to clear all active effects"));
+                key = new NamespacedKey(this, "effect_disabler");
+                meta.getPersistentDataContainer().set(key, PersistentDataType.BYTE, (byte) 1);
+                break;
+
+            case "lockin":
+                item = new ItemStack(Material.REDSTONE, 64);
+                meta = item.getItemMeta();
+                meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&c&lLock In"));
+                meta.setLore(List.of(ChatColor.GRAY + "Hit player 3 times for 1v1 lock for 8s"));
+                key = new NamespacedKey(this, "lock_in");
+                meta.getPersistentDataContainer().set(key, PersistentDataType.BYTE, (byte) 1);
+                break;
+
+            case "craftingchaos":
+                item = new ItemStack(Material.CRAFTING_TABLE, 64);
+                meta = item.getItemMeta();
+                meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&6&lCrafting Chaos"));
+                meta.setLore(List.of(ChatColor.GRAY + "Hit player 3 times to force open crafting table"));
+                key = new NamespacedKey(this, "crafting_chaos");
+                meta.getPersistentDataContainer().set(key, PersistentDataType.BYTE, (byte) 1);
+                break;
+
+            case "scrambler":
+                item = new ItemStack(Material.PAPER, 64);
+                meta = item.getItemMeta();
+                meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&f&lScrambler"));
+                meta.setLore(List.of(ChatColor.GRAY + "Hit player 3 times to scramble their inventory"));
+                key = new NamespacedKey(this, "scrambler");
+                meta.getPersistentDataContainer().set(key, PersistentDataType.BYTE, (byte) 1);
+                break;
+
+            case "tophat":
+                item = new ItemStack(Material.GOLDEN_HELMET, 64);
+                meta = item.getItemMeta();
+                meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&e&lTop Hat"));
+                meta.setLore(List.of(ChatColor.GRAY + "Hit player 3 times to replace helmet with gold for 10s"));
+                key = new NamespacedKey(this, "top_hat");
                 meta.getPersistentDataContainer().set(key, PersistentDataType.BYTE, (byte) 1);
                 break;
 
@@ -298,23 +385,22 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
         ItemStack item = event.getItem();
 
         if (event.getAction() == Action.RIGHT_CLICK_AIR || event.getAction() == Action.RIGHT_CLICK_BLOCK) {
-            if (item != null && item.getType() == Material.EXPERIENCE_BOTTLE) {
-                if (xpJammedPlayers.containsKey(player.getUniqueId())) {
-                    if (System.currentTimeMillis() < xpJammedPlayers.get(player.getUniqueId())) {
+            if (antiAbilityJammed.containsKey(player.getUniqueId())) {
+                if (System.currentTimeMillis() < antiAbilityJammed.get(player.getUniqueId())) {
+                    if (item != null && item.hasItemMeta() && item.getItemMeta().getPersistentDataContainer().getKeys().size() > 0) {
                         event.setCancelled(true);
-                        player.sendMessage(ChatColor.RED + "🛑 You are XP Jammed! Cannot throw XP right now.");
+                        player.sendMessage(ChatColor.RED + "🛑 You are Anti-Ability jammed! Cannot use ability items.");
                         return;
-                    } else {
-                        xpJammedPlayers.remove(player.getUniqueId());
                     }
+                } else {
+                    antiAbilityJammed.remove(player.getUniqueId());
                 }
             }
         }
 
         if (item == null || !item.hasItemMeta()) return;
         ItemMeta meta = item.getItemMeta();
-
-        if (event.getAction() == Action.RIGHT_CLICK_AIR || event.getAction() == Action.RIGHT_CLICK_BLOCK) {
+if (event.getAction() == Action.RIGHT_CLICK_AIR || event.getAction() == Action.RIGHT_CLICK_BLOCK) {
             
             if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "berserk_item"), PersistentDataType.BYTE)) {
                 event.setCancelled(true);
@@ -346,22 +432,6 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
                 snowball.setCustomName("ThrowableWebBall");
                 player.sendMessage(ChatColor.AQUA + "🕸️ Web trap thrown!");
                 player.playSound(player.getLocation(), Sound.ENTITY_SNOWBALL_THROW, 1.0f, 1.0f);
-            }
-            else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "xp_jammer"), PersistentDataType.BYTE)) {
-                event.setCancelled(true);
-                item.setAmount(item.getAmount() - 1);
-                
-                int jammed = 0;
-                for (org.bukkit.entity.Entity entity : player.getNearbyEntities(12, 12, 12)) {
-                    if (entity instanceof Player && entity != player) {
-                        Player target = (Player) entity;
-                        xpJammedPlayers.put(target.getUniqueId(), System.currentTimeMillis() + 15000);
-                        target.sendMessage(ChatColor.DARK_PURPLE + "🛑 You have been XP Jammed! Cannot throw XP for 15 seconds!");
-                        jammed++;
-                    }
-                }
-                player.sendMessage(ChatColor.LIGHT_PURPLE + "🔮 XP Jammer activated! Jammed " + jammed + " enemies nearby.");
-                player.playSound(player.getLocation(), Sound.BLOCK_BEACON_DEACTIVATE, 1.0f, 1.0f);
             }
         }
     }
@@ -433,92 +503,102 @@ public final class SparkAbilities extends JavaPlugin implements CommandExecutor,
         if (event.getDamager() instanceof Player && event.getEntity() instanceof Player) {
             Player attacker = (Player) event.getDamager();
             Player target = (Player) event.getEntity();
-            ItemStack item = attacker.getInventory().getItemInMainHand();
 
+            if (lockInRestricted.containsKey(attacker.getUniqueId())) {
+                UUID lockedTarget = lockInRestricted.get(attacker.getUniqueId());
+                if (!target.getUniqueId().equals(lockedTarget) && System.currentTimeMillis() < lockInRestricted.get(attacker.getUniqueId() + "_time")) {
+                    event.setCancelled(true);
+                    attacker.sendMessage(ChatColor.RED + "🔒 You are locked in a 1v1 duel with someone else!");
+                    return;
+                }
+            }
+
+            ItemStack item = attacker.getInventory().getItemInMainHand();
             if (!item.hasItemMeta()) return;
             ItemMeta meta = item.getItemMeta();
 
-            if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "item_counter"), PersistentDataType.BYTE)) {
-                int hits = hitCounters.getOrDefault(attacker.getUniqueId(), 0) + 1;
+            if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "anti_ability"), PersistentDataType.BYTE)) {
+                int hits = antiAbilityHits.getOrDefault(attacker.getUniqueId(), 0) + 1;
                 if (hits >= 3) {
-                    hitCounters.put(attacker.getUniqueId(), 0);
-                    int gapples = 0;
-                    for (ItemStack invItem : target.getInventory().getContents()) {
-                        if (invItem != null && (invItem.getType() == Material.GOLDEN_APPLE || invItem.getType() == Material.ENCHANTED_GOLDEN_APPLE)) {
-                            gapples += invItem.getAmount();
-                        }
-                    }
-                    attacker.sendMessage(ChatColor.GOLD + target.getName() + " has " + gapples + " Gapples and " + target.getLevel() + " XP levels!");
+                    antiAbilityHits.put(attacker.getUniqueId(), 0);
+                    antiAbilityJammed.put(target.getUniqueId(), System.currentTimeMillis() + 10000);
+                    attacker.sendMessage(ChatColor.DARK_PURPLE + "🔮 Anti Ability applied to " + target.getName() + " for 10s!");
+                    target.sendMessage(ChatColor.RED + "⚠️ Your abilities have been blocked for 10 seconds!");
                 } else {
-                    hitCounters.put(attacker.getUniqueId(), hits);
-                    attacker.sendMessage(ChatColor.YELLOW + "Hit counter: " + hits + "/3");
+                    antiAbilityHits.put(attacker.getUniqueId(), hits);
                 }
             }
-            else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "sticky_fingers"), PersistentDataType.BYTE)) {
-                int hits = stickyFingersHits.getOrDefault(attacker.getUniqueId(), 0) + 1;
+            else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "effect_disabler"), PersistentDataType.BYTE)) {
+                int hits = effectDisablerHits.getOrDefault(attacker.getUniqueId(), 0) + 1;
                 if (hits >= 3) {
-                    stickyFingersHits.put(attacker.getUniqueId(), 0);
-                    stickyFingersJammed.put(target.getUniqueId(), System.currentTimeMillis() + 15000);
-                    
-                    attacker.sendMessage(ChatColor.AQUA + "🍯 Sticky Fingers activated on " + target.getName() + " for 15 seconds!");
-                    target.sendMessage(ChatColor.RED + "⚠️ You are trapped by Sticky Fingers! Cannot pick up or drop items for 15 seconds.");
-                    target.playSound(target.getLocation(), Sound.ENTITY_PLAYER_SPLASH, 1.0f, 1.0f);
+                    effectDisablerHits.put(attacker.getUniqueId(), 0);
+                    for (PotionEffect effect : target.getActivePotionEffects()) {
+                        target.removePotionEffect(effect.getType());
+                    }
+                    attacker.sendMessage(ChatColor.YELLOW + "⏰ Cleared all effects from " + target.getName() + "!");
+                    target.sendMessage(ChatColor.RED + "⚠️ All your potion effects have been cleared!");
                 } else {
-                    stickyFingersHits.put(attacker.getUniqueId(), hits);
-                    attacker.sendMessage(ChatColor.YELLOW + "Sticky Fingers hits: " + hits + "/3");
+                    effectDisablerHits.put(attacker.getUniqueId(), hits);
                 }
             }
-            else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "clogger"), PersistentDataType.BYTE)) {
-                int hits = hitCounters.getOrDefault(attacker.getUniqueId(), 0) + 1;
+            else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "lock_in"), PersistentDataType.BYTE)) {
+                int hits = lockInHits.getOrDefault(attacker.getUniqueId(), 0) + 1;
                 if (hits >= 3) {
-                    hitCounters.put(attacker.getUniqueId(), 0);
-                    for (int i = 0; i < target.getInventory().getSize(); i++) {
-                        if (target.getInventory().getItem(i) == null) {
-                            target.getInventory().setItem(i, new ItemStack(Material.WOODEN_SHOVEL));
-                        }
-                    }
-                    target.sendMessage(ChatColor.RED + "⚠️ Your inventory was clogged!");
+                    lockInHits.put(attacker.getUniqueId(), 0);
+                    lockInRestricted.put(attacker.getUniqueId(), target.getUniqueId());
+                    lockInRestricted.put(attacker.getUniqueId() + "_time", System.currentTimeMillis() + 8000);
+                    attacker.sendMessage(ChatColor.RED + "⚔️ Lock In activated! 1v1 secured with " + target.getName() + " for 8s.");
+                    target.sendMessage(ChatColor.RED + "⚠️ You are locked in a 1v1 duel!");
                 } else {
-                    hitCounters.put(attacker.getUniqueId(), hits);
+                    lockInHits.put(attacker.getUniqueId(), hits);
                 }
             }
-            else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "neutralizer"), PersistentDataType.BYTE)) {
-                int hits = neutralizerHits.getOrDefault(attacker.getUniqueId(), 0) + 1;
+            else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "crafting_chaos"), PersistentDataType.BYTE)) {
+                int hits = craftingChaosHits.getOrDefault(attacker.getUniqueId(), 0) + 1;
                 if (hits >= 3) {
-                    neutralizerHits.put(attacker.getUniqueId(), 0);
-                    
-                    ItemStack[] armor = target.getInventory().getArmorContents();
-                    boolean changed = false;
-                    for (int i = 0; i < armor.length; i++) {
-                        if (armor[i] != null && armor[i].getEnchantmentLevel(Enchantment.PROTECTION) == 4) {
-                            armor[i].addUnsafeEnchantment(Enchantment.PROTECTION, 3);
-                            changed = true;
-                        }
-                    }
-                    
-                    if (changed) {
-                        target.getInventory().setArmorContents(armor);
-                        attacker.sendMessage(ChatColor.GOLD + "Neutralized " + target.getName() + "'s armor for 8 seconds!");
-                        target.sendMessage(ChatColor.RED + "⚠️ Your armor's protection was reduced for 8 seconds!");
-                        
-                        Bukkit.getScheduler().runTaskLater(this, () -> {
-                            ItemStack[] newArmor = target.getInventory().getArmorContents();
-                            for (int i = 0; i < newArmor.length; i++) {
-                                if (newArmor[i] != null && newArmor[i].getEnchantmentLevel(Enchantment.PROTECTION) == 3) {
-                                    newArmor[i].addUnsafeEnchantment(Enchantment.PROTECTION, 4);
-                                }
-                            }
-                            target.getInventory().setArmorContents(newArmor);
-                            target.sendMessage(ChatColor.GREEN + "🛡️ Your armor protection has returned to normal!");
-                        }, 160L);
-                    } else {
-                        attacker.sendMessage(ChatColor.YELLOW + target.getName() + " does not have Protection 4 armor equipped.");
-                    }
+                    craftingChaosHits.put(attacker.getUniqueId(), 0);
+                    target.openWorkbench(null, true);
+                    attacker.sendMessage(ChatColor.GOLD + "🪵 Crafting table opened for " + target.getName() + "!");
                 } else {
-                    neutralizerHits.put(attacker.getUniqueId(), hits);
-                    attacker.sendMessage(ChatColor.GOLD + "Neutralizer hits: " + hits + "/3");
+                    craftingChaosHits.put(attacker.getUniqueId(), hits);
+                }
+            }
+            else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "scrambler"), PersistentDataType.BYTE)) {
+                int hits = scramblerHits.getOrDefault(attacker.getUniqueId(), 0) + 1;
+                if (hits >= 3) {
+                    scramblerHits.put(attacker.getUniqueId(), 0);
+                    ItemStack[] contents = target.getInventory().getContents();
+                    List<ItemStack> list = new ArrayList<>();
+                    for (ItemStack content : contents) {
+                        if (content != null) list.add(content);
+                    }
+                    Collections.shuffle(list);
+                    target.getInventory().clear();
+                    for (int i = 0; i < list.size(); i++) {
+                        target.getInventory().setItem(i, list.get(i));
+                    }
+                    attacker.sendMessage(ChatColor.WHITE + "🔀 Scrambled " + target.getName() + "'s inventory!");
+                    target.sendMessage(ChatColor.RED + "⚠️ Your inventory has been scrambled!");
+                } else {
+                    scramblerHits.put(attacker.getUniqueId(), hits);
+                }
+            }
+            else if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "top_hat"), PersistentDataType.BYTE)) {
+                int hits = topHatHits.getOrDefault(attacker.getUniqueId(), 0) + 1;
+                if (hits >= 3) {
+                    topHatHits.put(attacker.getUniqueId(), 0);
+                    ItemStack oldHelmet = target.getInventory().getHelmet();
+                    target.getInventory().setHelmet(new ItemStack(Material.GOLDEN_HELMET));
+                    attacker.sendMessage(ChatColor.YELLOW + "🎩 Top Hat swapped " + target.getName() + "'s helmet!");
+                    
+                    Bukkit.getScheduler().runTaskLater(this, () -> {
+                        target.getInventory().setHelmet(oldHelmet);
+                        target.sendMessage(ChatColor.GREEN + "🛡️ Your original helmet has been restored!");
+                    }, 200L);
+                } else {
+                    topHatHits.put(attacker.getUniqueId(), hits);
                 }
             }
         }
     }
-}
+                }
