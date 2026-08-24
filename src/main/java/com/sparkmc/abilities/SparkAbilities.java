@@ -283,15 +283,23 @@ public final class SparkAbilities implements Listener {
             ItemMeta meta = potion.getItem().getItemMeta();
             if (meta.getPersistentDataContainer().has(new NamespacedKey("spark", "hulk_potion"), PersistentDataType.BYTE)) {
                 for (LivingEntity entity : event.getAffectedEntities()) {
-                    entity.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 300, 2));
+                    entity.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 300, 2)); // Strength III
                 }
             } else if (meta.getPersistentDataContainer().has(new NamespacedKey("spark", "death_touch"), PersistentDataType.BYTE)) {
                 for (LivingEntity entity : event.getAffectedEntities()) {
-                    entity.addPotionEffect(new PotionEffect(PotionEffectType.INSTANT_DAMAGE, 1, 2));
+                    entity.addPotionEffect(new PotionEffect(PotionEffectType.INSTANT_DAMAGE, 1, 2)); // Instant Damage III
                 }
             } else if (meta.getPersistentDataContainer().has(new NamespacedKey("spark", "elixir_of_life"), PersistentDataType.BYTE)) {
                 for (LivingEntity entity : event.getAffectedEntities()) {
-                    entity.addPotionEffect(new PotionEffect(PotionEffectType.INSTANT_HEALTH, 1, 8));
+                    entity.addPotionEffect(new PotionEffect(PotionEffectType.INSTANT_HEALTH, 1, 8)); // Instant Health IX
+                }
+            } else if (meta.getPersistentDataContainer().has(new NamespacedKey("spark", "escape_potion"), PersistentDataType.BYTE)) {
+                for (LivingEntity entity : event.getAffectedEntities()) {
+                    entity.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, 300, 3)); // Absorption IV
+                    entity.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, 300, 3)); // Resistance IV
+                    entity.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, 300, 3)); // Weakness IV
+                    entity.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, 300, 0)); // Fire Resistance
+                    entity.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 300, 3)); // Speed IV
                 }
             }
         }
@@ -310,4 +318,4 @@ public final class SparkAbilities implements Listener {
             }
         }
     }
-    }
+                         }
