@@ -387,7 +387,7 @@ public final class SparkAbilities extends JavaPlugin implements Listener, Comman
                 if (hits >= 3) {
                     topHatHits.put(attacker.getUniqueId(), 0);
                     ItemStack oldHelmet = target.getInventory().getHelmet();
-                    target.getInventory().setHelmet(newItemStack(Material.GOLDEN_HELMET));
+                    target.getInventory().setHelmet(new ItemStack(Material.GOLDEN_HELMET));
                     attacker.sendMessage(ChatColor.YELLOW + "🎩 Top Hat swapped " + target.getName() + "'s helmet!");
                     
                     Bukkit.getScheduler().runTaskLater(this, () -> {
