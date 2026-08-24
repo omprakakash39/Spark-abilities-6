@@ -4,9 +4,7 @@ main: com.sparkmc.abilities.SparkAbilities
 api-version: '1.21'
 author: Akki
 commands:
-  sparkgive:
-    description: Give custom abilities
-    permission: spark.admin
   sparkgui:
-    description: Open the ability admin menu
+    description: Opens the Spark Ability GUI
     permission: spark.admin
+    usage: /sparkgui
