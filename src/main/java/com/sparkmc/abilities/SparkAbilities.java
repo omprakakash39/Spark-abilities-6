@@ -24,7 +24,6 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerPickupItemEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -82,13 +81,114 @@ public final class SparkAbilities extends JavaPlugin implements Listener, Comman
 
         Inventory gui = Bukkit.createInventory(null, 27, GUI_TITLE);
 
-        ItemStack item = new ItemStack(Material.PAPER, 1);
-        ItemMeta meta = item.getItemMeta();
-        meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&f&lScrambler"));
-        meta.setLore(List.of(ChatColor.GRAY + "Click to get Scrambler ability item"));
-        item.setItemMeta(meta);
+        // 1. Berserk
+        ItemStack berserk = new ItemStack(Material.REDSTONE, 1);
+        ItemMeta m1 = berserk.getItemMeta();
+        m1.setDisplayName(ChatColor.RED + "⚡ Berserk");
+        m1.setLore(List.of(ChatColor.GRAY + "Gives Strength & Speed"));
+        m1.getPersistentDataContainer().set(new NamespacedKey(this, "berserk_item"), PersistentDataType.BYTE, (byte) 1);
+        berserk.setItemMeta(m1);
+        gui.setItem(0, berserk);
 
-        gui.setItem(0, item);
+        // 2. Stun Gun
+        ItemStack stunGun = new ItemStack(Material.BLAZE_ROD, 1);
+        ItemMeta m2 = stunGun.getItemMeta();
+        m2.setDisplayName(ChatColor.AQUA + "🔥 Stun Gun");
+        m2.setLore(List.of(ChatColor.GRAY + "Shoots a fireball"));
+        m2.getPersistentDataContainer().set(new NamespacedKey(this, "stun_gun"), PersistentDataType.BYTE, (byte) 1);
+        stunGun.setItemMeta(m2);
+        gui.setItem(1, stunGun);
+
+        // 3. Focus Mode
+        ItemStack focus = new ItemStack(Material.SPYGLASS, 1);
+        ItemMeta m3 = focus.getItemMeta();
+        m3.setDisplayName(ChatColor.LIGHT_PURPLE + "🎯 Focus Mode");
+        m3.setLore(List.of(ChatColor.GRAY + "Grants long-term strength"));
+        m3.getPersistentDataContainer().set(new NamespacedKey(this, "focus_mode"), PersistentDataType.BYTE, (byte) 1);
+        focus.setItemMeta(m3);
+        gui.setItem(2, focus);
+
+        // 4. Throwable Web
+        ItemStack web = new ItemStack(Material.COBWEB, 1);
+        ItemMeta m4 = web.getItemMeta();
+        m4.setDisplayName(ChatColor.AQUA + "🕸️ Throwable Web");
+        m4.setLore(List.of(ChatColor.GRAY + "Throws a web trap snowball"));
+        m4.getPersistentDataContainer().set(new NamespacedKey(this, "throwable_web"), PersistentDataType.BYTE, (byte) 1);
+        web.setItemMeta(m4);
+        gui.setItem(3, web);
+
+        // 5. XP Jammer
+        ItemStack xpJammer = new ItemStack(Material.EXPERIENCE_BOTTLE, 1);
+        ItemMeta m5 = xpJammer.getItemMeta();
+        m5.setDisplayName(ChatColor.DARK_PURPLE + "🔮 XP Jammer");
+        m5.setLore(List.of(ChatColor.GRAY + "Jams surrounding players' XP items"));
+        m5.getPersistentDataContainer().set(new NamespacedKey(this, "xp_jammer"), PersistentDataType.BYTE, (byte) 1);
+        xpJammer.setItemMeta(m5);
+        gui.setItem(4, xpJammer);
+
+        // 6. Anti-Ability
+        ItemStack antiAbility = new ItemStack(Material.POISONOUS_POTATO, 1);
+        ItemMeta m6 = antiAbility.getItemMeta();
+        m6.setDisplayName(ChatColor.DARK_PURPLE + "🔮 Anti-Ability");
+        m6.setLore(List.of(ChatColor.GRAY + "Blocks target's abilities after 3 hits"));
+        m6.getPersistentDataContainer().set(new NamespacedKey(this, "anti_ability"), PersistentDataType.BYTE, (byte) 1);
+        antiAbility.setItemMeta(m6);
+        gui.setItem(5, antiAbility);
+
+        // 7. Effect Disabler
+        ItemStack effectDisabler = new ItemStack(Material.MILK_BUCKET, 1);
+        ItemMeta m7 = effectDisabler.getItemMeta();
+        m7.setDisplayName(ChatColor.YELLOW + "⏰ Effect Disabler");
+        m7.setLore(List.of(ChatColor.GRAY + "Clears target's potion effects after 3 hits"));
+        m7.getPersistentDataContainer().set(new NamespacedKey(this, "effect_disabler"), PersistentDataType.BYTE, (byte) 1);
+        effectDisabler.setItemMeta(m7);
+        gui.setItem(6, effectDisabler);
+
+        // 8. Lock In
+        ItemStack lockIn = new ItemStack(Material.IRON_BARS, 1);
+        ItemMeta m8 = lockIn.getItemMeta();
+        m8.setDisplayName(ChatColor.RED + "⚔️ Lock In");
+        m8.setLore(List.of(ChatColor.GRAY + "Secures a 1v1 duel after 3 hits"));
+        m8.getPersistentDataContainer().set(new NamespacedKey(this, "lock_in"), PersistentDataType.BYTE, (byte) 1);
+        lockIn.setItemMeta(m8);
+        gui.setItem(7, lockIn);
+
+        // 9. Crafting Chaos
+        ItemStack craftingChaos = new ItemStack(Material.CRAFTING_TABLE, 1);
+        ItemMeta m9 = craftingChaos.getItemMeta();
+        m9.setDisplayName(ChatColor.GOLD + "🪵 Crafting Chaos");
+        m9.setLore(List.of(ChatColor.GRAY + "Opens crafting table for target"));
+        m9.getPersistentDataContainer().set(new NamespacedKey(this, "crafting_chaos"), PersistentDataType.BYTE, (byte) 1);
+        craftingChaos.setItemMeta(m9);
+        gui.setItem(8, craftingChaos);
+
+        // 10. Scrambler
+        ItemStack scrambler = new ItemStack(Material.PAPER, 1);
+        ItemMeta m10 = scrambler.getItemMeta();
+        m10.setDisplayName(ChatColor.WHITE + "🔀 Scrambler");
+        m10.setLore(List.of(ChatColor.GRAY + "Scrambles target inventory after 3 hits"));
+        m10.getPersistentDataContainer().set(new NamespacedKey(this, "scrambler"), PersistentDataType.BYTE, (byte) 1);
+        scrambler.setItemMeta(m10);
+        gui.setItem(9, scrambler);
+
+        // 11. Top Hat
+        ItemStack topHat = new ItemStack(Material.GOLDEN_HELMET, 1);
+        ItemMeta m11 = topHat.getItemMeta();
+        m11.setDisplayName(ChatColor.YELLOW + "🎩 Top Hat");
+        m11.setLore(List.of(ChatColor.GRAY + "Swaps helmet and restores later"));
+        m11.getPersistentDataContainer().set(new NamespacedKey(this, "top_hat"), PersistentDataType.BYTE, (byte) 1);
+        topHat.setItemMeta(m11);
+        gui.setItem(10, topHat);
+
+        // 12. Igloo
+        ItemStack igloo = new ItemStack(Material.PACKED_ICE, 1);
+        ItemMeta m12 = igloo.getItemMeta();
+        m12.setDisplayName(ChatColor.AQUA + "❄️ Igloo Dome");
+        m12.setLore(List.of(ChatColor.GRAY + "Traps target in an ice dome"));
+        m12.getPersistentDataContainer().set(new NamespacedKey(this, "igloo"), PersistentDataType.BYTE, (byte) 1);
+        igloo.setItemMeta(m12);
+        gui.setItem(11, igloo);
+
         player.openInventory(gui);
         return true;
     }
@@ -101,7 +201,7 @@ public final class SparkAbilities extends JavaPlugin implements Listener, Comman
         if (event.getAction() == Action.RIGHT_CLICK_AIR || event.getAction() == Action.RIGHT_CLICK_BLOCK) {
             if (antiAbilityJammed.containsKey(player.getUniqueId())) {
                 if (System.currentTimeMillis() < antiAbilityJammed.get(player.getUniqueId())) {
-                    if (item != null && item.hasItemMeta() && item.getItemMeta().getPersistentDataContainer().getKeys().size() > 0) {
+                    if (item != null && item.hasItemMeta() && !item.getItemMeta().getPersistentDataContainer().getKeys().isEmpty()) {
                         event.setCancelled(true);
                         player.sendMessage(ChatColor.RED + "🛑 You are Anti-Ability jammed! Cannot use ability items.");
                         return;
@@ -170,7 +270,7 @@ public final class SparkAbilities extends JavaPlugin implements Listener, Comman
         ItemStack item = event.getItemInHand();
         if (item != null && item.hasItemMeta()) {
             ItemMeta meta = item.getItemMeta();
-            if (meta.getPersistentDataContainer().getKeys().size() > 0) {
+            if (!meta.getPersistentDataContainer().getKeys().isEmpty()) {
                 event.setCancelled(true);
                 event.getPlayer().sendMessage(ChatColor.RED + "🛑 You cannot place ability items as blocks!");
             }
@@ -187,19 +287,6 @@ public final class SparkAbilities extends JavaPlugin implements Listener, Comman
                     player.getInventory().addItem(event.getCurrentItem().clone());
                     player.sendMessage(ChatColor.GREEN + "Added ability item to your inventory!");
                     player.playSound(player.getLocation(), Sound.ENTITY_ITEM_PICKUP, 0.5f, 1.0f);
-                }
-            }
-        }
-        
-        if (event.getRawSlot() == 5 || (event.getCurrentItem() != null && event.getCurrentItem().hasItemMeta() && 
-            event.getCurrentItem().getItemMeta().getPersistentDataContainer().has(new NamespacedKey(this, "top_hat"), PersistentDataType.BYTE))) {
-            if (event.getSlot() == 39 || event.isShiftClick()) {
-                ItemStack item = event.getCurrentItem();
-                if (item != null && item.hasItemMeta() && item.getItemMeta().getPersistentDataContainer().has(new NamespacedKey(this, "top_hat"), PersistentDataType.BYTE)) {
-                    if (event.getRawSlot() == 5 || event.getSlot() == 39) {
-                        event.setCancelled(true);
-                        event.getWhoClicked().sendMessage(ChatColor.RED + "🛑 You cannot equip Top Hat directly as a helmet!");
-                    }
                 }
             }
         }
@@ -265,16 +352,6 @@ public final class SparkAbilities extends JavaPlugin implements Listener, Comman
                         }
                     }, 300L);
                 }
-            }
-        }
-    }
-
-    @EventHandler
-    public void onPickup(PlayerPickupItemEvent event) {
-        Player player = event.getPlayer();
-        if (stickyFingersJammed.containsKey(player.getUniqueId())) {
-            if (System.currentTimeMillis() >= stickyFingersJammed.get(player.getUniqueId())) {
-                stickyFingersJammed.remove(player.getUniqueId());
             }
         }
     }
