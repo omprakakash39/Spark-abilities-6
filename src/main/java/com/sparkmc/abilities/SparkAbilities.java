@@ -5,7 +5,6 @@ import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
-import org.bukkit.Sound;
 import org.bukkit.block.Block;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -20,6 +19,7 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -95,7 +95,7 @@ public final class SparkAbilities extends JavaPlugin implements Listener, Comman
             return true;
         }
 
-        Inventory gui = Bukkit.createInventory(null, 27, GUI_TITLE);
+        Inventory gui = Bukkit.createInventory(null, 54, GUI_TITLE);
 
         gui.setItem(0, createGlowItem(Material.CLOCK, 1, ChatColor.YELLOW + "Effect Disabler", List.of(ChatColor.GRAY + "Hit to strip potion effects"), "effect_disabler"));
         gui.setItem(1, createGlowItem(Material.HONEYCOMB, 1, ChatColor.GOLD + "Sticky Fingers", List.of(ChatColor.GRAY + "Prevent drop/pickup"), "sticky_fingers"));
@@ -109,14 +109,14 @@ public final class SparkAbilities extends JavaPlugin implements Listener, Comman
         gui.setItem(9, createGlowItem(Material.LANTERN, 1, ChatColor.LIGHT_PURPLE + "KOTH Starter", List.of(ChatColor.GRAY + "Start KOTH event"), "koth_starter"));
         gui.setItem(10, createGlowItem(Material.WOODEN_SHOVEL, 1, ChatColor.GOLD + "Clogger", List.of(ChatColor.GRAY + "Fill inventory with shovels"), "clogger"));
         gui.setItem(11, createGlowItem(Material.SPYGLASS, 1, ChatColor.LIGHT_PURPLE + "Focus Mode", List.of(ChatColor.GRAY + "Damage boost"), "focus_mode"));
-        gui.setItem(12, createGlowItem(Material.DIAMOND_PICKAXE, 1, ChatColor.LIGHT_PURPLE + "Stun Gun", List.of(ChatColor.GRAY + "Paralyze target"), "stun_gun"));
+        gui.setItem(12, createGlowItem(Material.DIAMOND_HOE, 1, ChatColor.LIGHT_PURPLE + "Stun Gun", List.of(ChatColor.GRAY + "Paralyze target"), "stun_gun"));
         gui.setItem(13, createGlowItem(Material.PACKED_ICE, 1, ChatColor.AQUA + "Igloo", List.of(ChatColor.GRAY + "Trap in ice dome"), "igloo"));
         gui.setItem(14, createGlowItem(Material.REDSTONE, 1, ChatColor.RED + "Lock In", List.of(ChatColor.GRAY + "1v1 duel lock"), "lock_in"));
         gui.setItem(15, createGlowItem(Material.CRAFTING_TABLE, 1, ChatColor.GOLD + "Crafting Chaos", List.of(ChatColor.GRAY + "Open crafting menu"), "crafting_chaos"));
-        gui.setItem(16, createGlowItem(Material.NETHER_STAR, 1, ChatColor.LIGHT_PURPLE + "Scrambler", List.of(ChatColor.GRAY + "Scramble inventory"), "scrambler"));
+        gui.setItem(16, createGlowItem(Material.PAPER, 1, ChatColor.LIGHT_PURPLE + "Scrambler", List.of(ChatColor.GRAY + "Scramble inventory"), "scrambler"));
         gui.setItem(17, createGlowItem(Material.GOLDEN_HELMET, 1, ChatColor.GOLD + "Top Hat", List.of(ChatColor.GRAY + "Swap helmet"), "top_hat"));
 
-        ItemStack hulk = new ItemStack(Material.POTION);
+        ItemStack hulk = new ItemStack(Material.SPLASH_POTION);
         ItemMeta hm = hulk.getItemMeta();
         hm.setDisplayName(ChatColor.BLUE + "Hulk Potion");
         hm.getPersistentDataContainer().set(new NamespacedKey(this, "hulk_potion"), PersistentDataType.BYTE, (byte) 1);
@@ -137,7 +137,7 @@ public final class SparkAbilities extends JavaPlugin implements Listener, Comman
         elixir.setItemMeta(em);
         gui.setItem(20, elixir);
 
-        ItemStack escape = new ItemStack(Material.POTION);
+        ItemStack escape = new ItemStack(Material.SPLASH_POTION);
         ItemMeta esm = escape.getItemMeta();
         esm.setDisplayName(ChatColor.LIGHT_PURPLE + "Escape Potion");
         esm.getPersistentDataContainer().set(new NamespacedKey(this, "escape_potion"), PersistentDataType.BYTE, (byte) 1);
@@ -472,6 +472,27 @@ public final class SparkAbilities extends JavaPlugin implements Listener, Comman
                 if (player.hasPermission("spark.admin")) {
                     player.getInventory().addItem(event.getCurrentItem().clone());
                     player.sendMessage(ChatColor.GREEN + "Item added to inventory!");
+                }
+            }
+            return;
+        }
+
+        if (event.getSlotType() == org.bukkit.event.inventory.InventoryType.SlotType.ARMOR && event.getSlot() == 39) {
+            ItemStack cursor = event.getCursor();
+            ItemStack current = event.getCurrentItem();
+            
+            checkAndCancelTopHat(event, cursor);
+            checkAndCancelTopHat(event, current);
+        }
+    }
+
+    private void checkAndCancelTopHat(InventoryClickEvent event, ItemStack item) {
+        if (item != null && item.hasItemMeta()) {
+            ItemMeta meta = item.getItemMeta();
+            if (meta.getPersistentDataContainer().has(new NamespacedKey(this, "top_hat"), PersistentDataType.BYTE)) {
+                event.setCancelled(true);
+                if (event.getWhoClicked() instanceof Player) {
+                    event.getWhoClicked().sendMessage(ChatColor.RED + "🛑 You cannot wear the Top Hat as a helmet!");
                 }
             }
         }
