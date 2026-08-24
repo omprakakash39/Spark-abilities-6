@@ -15,13 +15,19 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
 import java.util.*;
 
 public final class SparkAbilities implements Listener {
+
+    private final Plugin plugin;
+
+    public SparkAbilities(Plugin plugin) {
+        this.plugin = plugin;
+    }
 
     private final Map<UUID, Long> cooldowns = new HashMap<>();
     private final Map<UUID, UUID> lockedInTarget = new HashMap<>();
@@ -211,7 +217,7 @@ public final class SparkAbilities implements Listener {
                             }
                         }
                     }
-                    Bukkit.getScheduler().runTaskLater(JavaPlugin.getPlugin(SparkAbilities.class), () -> {
+                    Bukkit.getScheduler().runTaskLater(plugin, () -> {
                         for (Block b : iceBlocks) {
                             if (b.getType() == Material.PACKED_ICE) b.setType(Material.AIR);
                         }
@@ -260,7 +266,7 @@ public final class SparkAbilities implements Listener {
                     topHatHits.put(attacker.getUniqueId(), 0);
                     ItemStack oldHelmet = target.getInventory().getHelmet();
                     target.getInventory().setHelmet(new ItemStack(Material.GOLDEN_HELMET));
-                    Bukkit.getScheduler().runTaskLater(JavaPlugin.getPlugin(SparkAbilities.class), () -> {
+                    Bukkit.getScheduler().runTaskLater(plugin, () -> {
                         target.getInventory().setHelmet(oldHelmet);
                     }, 160L);
                     attacker.sendMessage(ChatColor.GOLD + "Top Hat applied!");
@@ -305,4 +311,4 @@ public final class SparkAbilities implements Listener {
             }
         }
     }
-                        }
+                             }
