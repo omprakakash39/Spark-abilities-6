@@ -1,7 +1,7 @@
 name: SparkAbilities
 version: 1.0
-main: com.sparkmc.abilities.SparkAbilities
-api-version: 1.20
+main: com.omprepakash39.spark.SparkAbilityPlugin
+api-version: '1.21'
 commands:
   sparkgui:
     description: Opens the Spark Ability GUI
