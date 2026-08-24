@@ -4,6 +4,6 @@ main: com.omprepakash39.spark.SparkAbilityPlugin
 api-version: '1.21'
 commands:
   sparkgui:
-    description: Opens the Spark Ability GUI
+    description: Opens the Spark Abilities GUI
     permission: spark.admin
-    usage: /sparkgui
+    permission-message: You do not have permission to use this command.
