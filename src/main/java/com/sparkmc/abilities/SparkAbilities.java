@@ -29,11 +29,10 @@ public final class SparkAbilities implements Listener {
         this.plugin = plugin;
     }
 
-    private final Map<UUID, Long> cooldowns = new HashMap<>();
     private final Map<UUID, UUID> lockedInTarget = new HashMap<>();
     private final Map<UUID, Long> stickyFingersJammed = new HashMap<>();
     
-    // Hit counters
+    // Hit counters (3 hits requirement)
     private final Map<UUID, Integer> itemCounterHits = new HashMap<>();
     private final Map<UUID, Integer> neutralizerHits = new HashMap<>();
     private final Map<UUID, Integer> cloggerHits = new HashMap<>();
@@ -45,7 +44,7 @@ public final class SparkAbilities implements Listener {
 
     private static final String GUI_TITLE = ChatColor.DARK_PURPLE + "Ability Crate Preview";
 
-    // Helper method for standard items
+    // Helper for Bold Items
     public ItemStack createAbilityItem(Material material, String boldName, List<String> loreLines, String keyName) {
         ItemStack item = new ItemStack(material);
         ItemMeta meta = item.getItemMeta();
@@ -69,7 +68,7 @@ public final class SparkAbilities implements Listener {
         return item;
     }
 
-    // Helper method for custom splash potions
+    // Helper for Bold Splash Potions
     public ItemStack createPotionItem(String boldName, List<String> loreLines, String keyName) {
         ItemStack item = new ItemStack(Material.SPLASH_POTION);
         ItemMeta meta = item.getItemMeta();
@@ -120,7 +119,7 @@ public final class SparkAbilities implements Listener {
                 event.setCancelled(true);
                 player.launchProjectile(org.bukkit.entity.Snowball.class);
                 player.sendMessage(ChatColor.AQUA + "⚡ Fired Stun Gun projectile!");
-                item.setAmount(item.getAmount() - 1);
+                item.setAmount(item.getAmount() - 1); // 1 use ke baad destroy
             } else if (meta.getPersistentDataContainer().has(focusModeKey, PersistentDataType.BYTE)) {
                 event.setCancelled(true);
                 player.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 1200, 0, false, true));
@@ -195,7 +194,7 @@ public final class SparkAbilities implements Listener {
                         }
                     }
                     attacker.sendMessage(ChatColor.GOLD + "Clogger activated!");
-                    item.setAmount(item.getAmount() - 1);
+                    item.setAmount(item.getAmount() - 1); // 3 hits ke baad clogger destroy
                 } else {
                     cloggerHits.put(attacker.getUniqueId(), hits);
                 }
@@ -311,4 +310,4 @@ public final class SparkAbilities implements Listener {
             }
         }
     }
-                             }
+    }
